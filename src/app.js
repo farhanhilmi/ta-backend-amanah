@@ -89,7 +89,8 @@ export default async () => {
             res.end();
         });
 
-        app.use(Routes());
+        // Load API Routes
+        Routes(app);
 
         // API ENDPOINT NOT FOUND
         app.use((req, res, next) => {
