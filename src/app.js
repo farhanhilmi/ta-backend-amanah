@@ -3,6 +3,11 @@ import cors from 'cors';
 import morgan from 'morgan';
 import Routes from './routes/index.js';
 import busboy from 'busboy';
+import { fileURLToPath } from 'url';
+import path, { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default async () => {
     try {
@@ -80,13 +85,16 @@ export default async () => {
             return req.params[param];
         });
 
-        app.get('/', (req, res, next) => {
-            res.status(200).json({
-                status: 'success',
-                environment: process.env.NODE_ENV,
-                message: `Welcome to the API. Please use the correct endpoint.`,
-            });
-            res.end();
+        // app.get('/', (req, res, next) => {
+        //     res.status(200).json({
+        //         status: 'success',
+        //         environment: process.env.NODE_ENV,
+        //         message: `Welcome to the API. Please use the correct endpoint.`,
+        //     });
+        //     res.end();
+        // });
+        app.get('/', function (req, res) {
+            res.sendFile(path.join(__dirname, './views/template.html'));
         });
 
         // Load API Routes
