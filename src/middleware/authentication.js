@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
+import { AuthorizeError } from '../utils/errorHandler.js';
 
-const authenticateToken = (req, res, next) => {
+export const authenticateToken = (req, res, next) => {
     const header = req.headers.authorization;
     const token = header && header.split(' ')[1];
 
@@ -27,4 +28,24 @@ const authenticateToken = (req, res, next) => {
     return next();
 };
 
-export default authenticateToken;
+export const isLender = (req, res, next) => {
+    const { roles } = req.user;
+
+    if (roles.toLowerCase() != 'lender') {
+        throw new AuthorizeError(
+            'Your account has no access to these resources',
+        );
+    }
+    return next();
+};
+
+export const isBorrower = (req, res, next) => {
+    const { roles } = req.user;
+
+    if (roles.toLowerCase() != 'borrower') {
+        throw new AuthorizeError(
+            'Your account has no access to these resources',
+        );
+    }
+    return next();
+};

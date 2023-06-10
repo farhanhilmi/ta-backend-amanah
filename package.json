@@ -8,7 +8,7 @@
         "test": "jest --coverage --detectOpenHandles",
         "start": "set NODE_ENV=production&& node ./src/server.js",
         "dev": "set NODE_ENV=development&& nodemon ./src/server.js",
-        "gcp-change": "gcloud config set project ta-loan-service",
+        "gcp-change": "gcloud config set project ta-backend-api",
         "deploy": "gcloud app deploy",
         "log": "gcloud app logs tail -s default"
     },

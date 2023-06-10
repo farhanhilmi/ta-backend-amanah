@@ -37,8 +37,9 @@ export const formatDataPagination = (
     tenor_max = null,
     yield_min = null,
     yield_max = null,
+    path = null,
 ) => {
-    const URL = `${config.PROJECT_URL}`;
+    const URL = `${config.PROJECT_URL}/${path}`;
     const isNextPage = totalItems > page * limit;
     const isPreviousPage = page > 1;
 

@@ -28,6 +28,7 @@ import forgetToken from '../database/models/forgetToken.model.js';
 import { generateDynamicLink } from '../utils/firebase.js';
 import { sendMailRequestNewPassword } from '../utils/mail/index.js';
 import createBorrower from './users/createBorrower.js';
+import createLender from './lender/createLender.js';
 
 export default class Users {
     constructor() {
@@ -152,7 +153,8 @@ export default class Users {
             );
             if (!updatedUser) throw new NotFoundError('User not found');
 
-            createBorrower(userId);
+            if (user.roles.toLowerCase() == 'borrower') createBorrower(userId);
+            if (user.roles.toLowerCase() == 'lender') createLender(userId);
 
             await this.verifyTokenModel.deleteMany({ userId });
 

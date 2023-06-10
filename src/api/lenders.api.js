@@ -1,0 +1,57 @@
+import LenderService from '../services/lender.service.js';
+import { responseData } from '../utils/responses.js';
+
+// import userServices from '../services/index.js';
+export class LenderController {
+    constructor() {
+        this.lenderServices = new LenderService();
+    }
+
+    // async postAutoLend(req, res, next) {
+    //     try {
+    //         // const { page, limit, sort, order } = req.query;
+    //         const data = await autoLend('', req.body);
+    //         // io.emit(`notification#${userId}`, data);
+    //         PublishMessage(data, 'CREATE_AUTO_LEND', 'Loan');
+    //         res.status(201).json(
+    //             responseData(
+    //                 [],
+    //                 true,
+    //                 'Auto Lend has been created. When the auto lend matches a loan, the loan will be automatically funded. We will send you a notification when this happens via your email.',
+    //                 {},
+    //             ),
+    //         );
+    //     } catch (error) {
+    //         next(error);
+    //     }
+    // }
+
+    async postFundingLoan(req, res, next) {
+        try {
+            const { userId, roles } = req.user;
+            const user = {
+                userId,
+                roles,
+            };
+            const data = await this.lenderServices.createFundings(
+                user,
+                req.body,
+            );
+
+            res.status(201).json(responseData(data, true, 'success', {}));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getLender(req, res, next) {
+        try {
+            const { userId, roles } = req.user;
+
+            const data = await this.lenderServices.getLenderProfile(userId);
+            res.status(200).json(responseData(data, true, 'success', {}));
+        } catch (error) {
+            next(error);
+        }
+    }
+}

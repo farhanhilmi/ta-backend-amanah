@@ -2,13 +2,26 @@ import jwt from 'jsonwebtoken';
 import RefreshToken from '../database/models/refreshToken.model.js';
 import config from '../config/index.js';
 import { AuthorizeError } from './errorHandler.js';
+import borrowerModels from '../database/models/borrower/borrower.models.js';
+import lenderModel from '../database/models/lender/lender.model.js';
 
 export const generateTokens = async (user) => {
     try {
+        let verifiedKYC = false;
+
+        if (user.roles.toLowerCase() == 'lender') {
+            const lender = await lenderModel.findOne({ userId });
+            verifiedKYC = lender.roles;
+        } else if (user.roles.toLowerCase() == 'borrower') {
+            const borrower = await borrowerModels.findOne({ userId });
+            verifiedKYC = borrower.roles;
+        }
+
         const payload = {
             userId: user._id.toString(),
             roles: user.roles,
-            verified: user.verified,
+            verifiedEmail: user.verified,
+            verifiedKYC: verifiedKYC,
         };
         const accessToken = jwt.sign(payload, config.ACCESS_TOKEN_PRIVATE_KEY, {
             expiresIn: config.tokenExpires.access,
@@ -43,10 +56,20 @@ export const verifyRefreshToken = (token) => {
 
 export const regenerateAccessToken = async (user) => {
     try {
+        let verifiedKYC = false;
+
+        if (user.roles.toLowerCase() == 'lender') {
+            const lender = await lenderModel.findOne({ userId });
+            verifiedKYC = lender.roles;
+        } else if (user.roles.toLowerCase() == 'borrower') {
+            const borrower = await borrowerModels.findOne({ userId });
+            verifiedKYC = borrower.roles;
+        }
         const payload = {
             userId: user._id.toString(),
             roles: user.roles,
-            verified: user.verified,
+            verifiedEmail: user.verified,
+            verifiedKYC: verifiedKYC,
         };
         const accessToken = jwt.sign(payload, config.ACCESS_TOKEN_PRIVATE_KEY, {
             expiresIn: config.tokenExpires.access,
