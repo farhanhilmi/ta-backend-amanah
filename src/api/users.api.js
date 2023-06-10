@@ -6,7 +6,7 @@ import {
 } from '../services/mail/sendMail.js';
 
 // import userServices from '../services/index.js';
-export class UsersController {
+export default class UsersController {
     constructor(channel) {
         this.channel = channel;
         this.usersService = new UserService();

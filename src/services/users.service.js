@@ -27,6 +27,7 @@ import {
 import forgetToken from '../database/models/forgetToken.model.js';
 import { generateDynamicLink } from '../utils/firebase.js';
 import { sendMailRequestNewPassword } from '../utils/mail/index.js';
+import createBorrower from './users/createBorrower.js';
 
 export default class Users {
     constructor() {
@@ -150,6 +151,8 @@ export default class Users {
                 true,
             );
             if (!updatedUser) throw new NotFoundError('User not found');
+
+            createBorrower(userId);
 
             await this.verifyTokenModel.deleteMany({ userId });
 

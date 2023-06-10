@@ -68,6 +68,7 @@ const config = {
     FIREBASE_DEEP_LINK_DOMAIN_URI_PREFIX,
     DEEP_LINK_URL,
     ANDROID_PACKAGE_NAME,
+    NODE_ENV,
 };
 
 export default config;
