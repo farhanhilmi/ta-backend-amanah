@@ -10,10 +10,10 @@ export const generateTokens = async (user) => {
         let verifiedKYC = false;
 
         if (user.roles.toLowerCase() == 'lender') {
-            const lender = await lenderModel.findOne({ userId });
+            const lender = await lenderModel.findOne({ userId: user._id });
             verifiedKYC = lender.roles;
         } else if (user.roles.toLowerCase() == 'borrower') {
-            const borrower = await borrowerModels.findOne({ userId });
+            const borrower = await borrowerModels.findOne({ userId: user._id });
             verifiedKYC = borrower.roles;
         }
 
@@ -33,7 +33,7 @@ export const generateTokens = async (user) => {
         );
 
         const userToken = await RefreshToken.findOne({ userId: user._id });
-        if (userToken) await userToken.remove();
+        if (userToken) await userToken.deleteOne({ userId: user._id });
 
         await new RefreshToken({
             userId: user._id,
@@ -59,10 +59,10 @@ export const regenerateAccessToken = async (user) => {
         let verifiedKYC = false;
 
         if (user.roles.toLowerCase() == 'lender') {
-            const lender = await lenderModel.findOne({ userId });
+            const lender = await lenderModel.findOne({ userId: user._id });
             verifiedKYC = lender.roles;
         } else if (user.roles.toLowerCase() == 'borrower') {
-            const borrower = await borrowerModels.findOne({ userId });
+            const borrower = await borrowerModels.findOne({ userId: user._id });
             verifiedKYC = borrower.roles;
         }
         const payload = {

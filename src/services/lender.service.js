@@ -98,14 +98,14 @@ export default class LenderService {
 
             if (!loan) {
                 throw new NotFoundError(
-                    "We can't find the loan request you are looking for or the loan request is already funded by other lende",
+                    "We can't find the loan request you are looking for or the loan request is already funded by other lender",
                 );
             }
 
             if (
                 loan.status !== 'on request' &&
-                loan.status !== 'on process' &&
-                loan.status !== 'in borrowing'
+                loan.status !== 'on process'
+                // loan.status !== 'in borrowing'
             ) {
                 throw new ValidationError(
                     'The loan request is already funded by other lender',
@@ -122,10 +122,36 @@ export default class LenderService {
                 );
             }
 
+            const totalFunds = await this.fundingModel.aggregate([
+                {
+                    $match: {
+                        loanId: toObjectId(payload.loanId),
+                    },
+                },
+                {
+                    $group: {
+                        _id: '$loanId',
+                        totalFunds: {
+                            $sum: '$amount',
+                        },
+                    },
+                },
+            ]);
+            const currentTotalFunds =
+                totalFunds[0].totalFunds + parseInt(payload.amount);
+            if (currentTotalFunds >= loan.amount) {
+                throw new RequestError(
+                    "You can't fund more than the available loan amount.",
+                );
+            }
+
+            // if (payload.amount > loan.amount) {
+            //     throw RequestError('You cannot fund more than the loan amount');
+            // }
+
             const lender = await this.lenderModel.findOne({
                 userId: user.userId,
             });
-            console.log('user.userId', user.userId);
             console.log('lender', lender);
 
             const yieldReturn =
@@ -145,6 +171,15 @@ export default class LenderService {
                     'Failed to create funding, please try again later',
                 );
             }
+
+            if (currentTotalFunds === loan.amount) {
+                loan.status = 'in borrowing';
+            } else {
+                loan.status = 'on process';
+            }
+
+            loan.save();
+            // const loanthis.loanModel.findOneAndUpdate({_id: payload.loanId}, {status: 'in borrowing'})
         } catch (error) {
             throw error;
         }

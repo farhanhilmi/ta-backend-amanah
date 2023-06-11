@@ -33,14 +33,11 @@ export class LenderController {
                 userId,
                 roles,
             };
-            const data = await this.lenderServices.createFundings(
-                user,
-                req.body,
-            );
+            await this.lenderServices.createFundings(user, req.body);
 
-            res.status(201).json(responseData(data, true, 'success', {}));
+            res.status(201).json(responseData([], true, 'Success', {}));
         } catch (error) {
-            throw error;
+            next(error);
         }
     }
 

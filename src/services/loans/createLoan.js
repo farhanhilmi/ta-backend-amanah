@@ -1,4 +1,4 @@
-import BorrowerContractModels from '../../database/models/loan/BorrowerContract.models.js';
+import BorrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
 import loansModels from '../../database/models/loan/loans.models.js';
 import usersModel from '../../database/models/users.model.js';
 import { toObjectId } from '../../utils/index.js';
@@ -21,7 +21,6 @@ export default async (payload) => {
             paymentSchema: payload.loanApplication.paymentSchema,
             borrowingCategory: payload.loanApplication.borrowingCategory,
         };
-
         const [loan, borrower] = await Promise.allSettled([
             await loansModels.create(data),
             await usersModel.findOne({ _id: toObjectId(data.userId) }),

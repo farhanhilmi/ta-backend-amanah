@@ -1,6 +1,51 @@
 import { toObjectId } from '../../utils/index.js';
 import loansModels from '../models/loan/loans.models.js';
 
+const loanStatus = {
+    $cond: {
+        if: {
+            $or: [
+                { $eq: ['$status', 'on request'] },
+                { $eq: ['$status', 'on process'] },
+            ],
+        },
+        then: 'tersedia',
+        else: {
+            $cond: {
+                if: {
+                    $eq: ['$status', 'in borrowing'],
+                },
+                then: 'penuh',
+                else: {
+                    $cond: {
+                        if: {
+                            $eq: ['$status', 'repayment'],
+                        },
+                        then: 'selesai',
+                        else: {
+                            $cond: {
+                                if: {
+                                    $eq: ['$status', 'unpaid'],
+                                },
+                                then: 'belum bayar',
+                                else: {
+                                    $cond: {
+                                        if: {
+                                            $eq: ['$status', 'late repayment'],
+                                        },
+                                        then: 'telat bayar',
+                                        else: 'unknown',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+};
+
 export default class LoanRepository {
     constructor() {
         this.model = loansModels;
@@ -108,7 +153,7 @@ export default class LoanRepository {
                                         {
                                             $eq: [
                                                 '$$loan.status',
-                                                'in borrowing',
+                                                'on process',
                                             ],
                                         },
                                     ],
@@ -298,6 +343,8 @@ export default class LoanRepository {
                         $addFields: {
                             'borrower.borrowerId': '$borrower._id',
                             loanId: '$_id',
+                            status: loanStatus,
+
                             // subtract amount loan with amount funding
                             totalFunding: {
                                 // check if funding is empty array, return 0, else return total funding
@@ -329,6 +376,7 @@ export default class LoanRepository {
                             borrowerId: 0,
                             __v: 0,
                             funding: 0,
+                            // status: 0,
                             _id: 0,
                             'borrower._id': 0,
                             'borrower.__v': 0,
@@ -431,6 +479,7 @@ export default class LoanRepository {
                     {
                         $addFields: {
                             loanId: '$_id',
+                            status: loanStatus,
                             // 'contract.borrower':
                             //     '$borrower_contracts.contractLink',
                             contract: '$borrower_contracts.contractLink',
@@ -491,6 +540,7 @@ export default class LoanRepository {
                     },
                 ])
                 .exec();
+            console.log('loan', loan);
 
             return loan[0];
         } catch (error) {
