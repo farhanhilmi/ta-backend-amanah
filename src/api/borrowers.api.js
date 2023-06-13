@@ -86,4 +86,18 @@ export default class BorrowerController {
             next(error);
         }
     }
+
+    async getPaymentSchedule(req, res, next) {
+        try {
+            const { userId } = req.user;
+
+            const data = await this.borrowerService.getPaymentSchedule(userId);
+
+            res.status(200).json(
+                responseData(data, true, 'Successfully get payment schedule'),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
 }

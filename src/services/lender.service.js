@@ -1,13 +1,21 @@
 import lenderModel from '../database/models/lender/lender.model.js';
 import loansModels from '../database/models/loan/loans.models.js';
 import fundingModel from '../database/models/loan/funding.models.js';
+import paymentModels from '../database/models/loan/payment.models.js';
 import {
     AuthorizeError,
     NotFoundError,
     RequestError,
     ValidationError,
 } from '../utils/errorHandler.js';
-import { toObjectId, validateRequestPayload } from '../utils/index.js';
+import {
+    getCurrentDateIndonesia,
+    getCurrentJakartaTime,
+    isFloat,
+    toObjectId,
+    validateRequestPayload,
+} from '../utils/index.js';
+import config from '../config/index.js';
 
 export default class LenderService {
     constructor() {
@@ -15,6 +23,7 @@ export default class LenderService {
         this.lenderModel = lenderModel;
         this.loanModel = loansModels;
         this.fundingModel = fundingModel;
+        this.paymentModel = paymentModels;
     }
 
     async getLenderProfile(userId) {
@@ -137,9 +146,13 @@ export default class LenderService {
                     },
                 },
             ]);
-            const currentTotalFunds =
-                totalFunds[0].totalFunds + parseInt(payload.amount);
-            if (currentTotalFunds >= loan.amount) {
+            let currentTotalFunds = !totalFunds[0]?.totalFunds
+                ? 0
+                : totalFunds[0]?.totalFunds;
+            currentTotalFunds = currentTotalFunds + parseInt(payload.amount);
+            console.log('currentTotalFunds', currentTotalFunds);
+            // return;
+            if (currentTotalFunds > loan.amount) {
                 throw new RequestError(
                     "You can't fund more than the available loan amount.",
                 );
@@ -174,6 +187,50 @@ export default class LenderService {
 
             if (currentTotalFunds === loan.amount) {
                 loan.status = 'in borrowing';
+                const paymentSchedule = [];
+                const paymentDate = new Date(getCurrentJakartaTime());
+                if (loan.paymentSchema === 'Pelunasan Cicilan') {
+                    let paymentDateIncrement = 0;
+                    const totalBill =
+                        loan.amount +
+                        loan.yieldReturn +
+                        parseInt(config.TAX_AMOUNT_APP);
+                    const monthlyPayment = Math.floor(totalBill / loan.tenor); // Calculate the integer part of the monthly payment
+                    const lastMonthPayment =
+                        totalBill - monthlyPayment * (loan.tenor - 1); // Calculate the payment for the last month
+                    for (let i = 0; i < loan.tenor - 1; i++) {
+                        paymentDateIncrement += 30;
+                        // const loanAmount =
+                        //     (loan.amount + loan.yieldReturn) / loan.tenor;
+                        paymentSchedule.push({
+                            amount: monthlyPayment,
+                            date: paymentDate.setDate(
+                                paymentDate.getDate() + paymentDateIncrement,
+                            ),
+                        });
+                    }
+                    paymentSchedule.push({
+                        amount: lastMonthPayment,
+                        date: paymentDate.setDate(
+                            paymentDate.getDate() + paymentDateIncrement + 30,
+                        ),
+                    });
+                    // await this.paymentModel.create({
+                    //     loanId: loan._id,
+                    //     paymentSchedule,
+                    // });
+                } else {
+                    paymentSchedule.push({
+                        amount: totalBill,
+                        date: paymentDate.setDate(
+                            paymentDate.getDate() + loan.tenor * 30,
+                        ),
+                    });
+                }
+                await this.paymentModel.create({
+                    loanId: loan._id,
+                    paymentSchedule,
+                });
             } else {
                 loan.status = 'on process';
             }
@@ -187,8 +244,7 @@ export default class LenderService {
 
     async getLenderProfit(userId) {
         try {
-            const lender = await this.lenderModel.aggregate([
-                // match to get lender
+            const fundings = await this.lenderModel.aggregate([
                 {
                     $match: {
                         userId: toObjectId(userId),
@@ -206,24 +262,8 @@ export default class LenderService {
                     $unwind: '$funding',
                 },
                 {
-                    $addFields: {},
-                },
-                // set project
-                {
-                    $project: {
-                        _id: 0,
-                        userId: 0,
-                        __v: 0,
-                        createdDate: 0,
-                        modifyDate: 0,
-                        status: 0,
-                    },
-                },
-
-                // group by lender
-                {
                     $group: {
-                        _id: '$lender.loanId',
+                        _id: null,
                         totalYield: {
                             $sum: '$funding.yield',
                         },
@@ -232,11 +272,68 @@ export default class LenderService {
                         },
                     },
                 },
+                {
+                    $project: {
+                        _id: 0,
+                    },
+                },
             ]);
 
-            console.log('lender', lender);
+            // const lender = await this.lenderModel.aggregate([
+            //     // match to get lender
+            //     {
+            //         $match: {
+            //             userId: toObjectId(userId),
+            //         },
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: 'fundings',
+            //             localField: '_id',
+            //             foreignField: 'lenderId',
+            //             as: 'funding',
+            //         },
+            //     },
+            //     {
+            //         $unwind: '$funding',
+            //     },
+            //     {
+            //         $addFields: {},
+            //     },
+            //     // set project
+            //     {
+            //         $project: {
+            //             _id: 0,
+            //             userId: 0,
+            //             __v: 0,
+            //             createdDate: 0,
+            //             modifyDate: 0,
+            //             status: 0,
+            //         },
+            //     },
 
-            return lender;
+            //     // group by lender
+            //     {
+            //         $group: {
+            //             _id: '$lender.loanId',
+            //             totalYield: {
+            //                 $sum: '$funding.yield',
+            //             },
+            //             totalFunding: {
+            //                 $sum: '$funding.amount',
+            //             },
+            //         },
+            //     },
+            // ]);
+
+            if (fundings.length === 0) {
+                return {
+                    totalYield: 0,
+                    totalFunding: 0,
+                };
+            }
+
+            return fundings[0];
         } catch (error) {
             throw error;
         }

@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import BorrowerController from '../api/borrowers.api.js';
-import { authenticateToken, isBorrower } from '../middleware/authentication.js';
+import {
+    authenticateToken,
+    isBorrower,
+    isKYCVerified,
+} from '../middleware/authentication.js';
 
 const Routes = () => {
     const router = Router();
@@ -15,6 +19,7 @@ const Routes = () => {
         '/loan',
         authenticateToken,
         isBorrower,
+        isKYCVerified,
         controller.postRequestLoan.bind(controller),
     );
     router.get(
@@ -23,6 +28,14 @@ const Routes = () => {
         isBorrower,
         controller.getLoanHistory.bind(controller),
     );
+
+    router.get(
+        '/payment/schedule',
+        authenticateToken,
+        isBorrower,
+        controller.getPaymentSchedule.bind(controller),
+    );
+
     router.put(
         '/request/verification',
         authenticateToken,

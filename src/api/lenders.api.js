@@ -51,4 +51,17 @@ export class LenderController {
             next(error);
         }
     }
+
+    async getProfit(req, res, next) {
+        try {
+            const data = await this.lenderServices.getLenderProfit(
+                req.user.userId,
+            );
+            res.status(200).json(
+                responseData(data, true, 'Success get lender profit', {}),
+            );
+        } catch (error) {
+            throw error;
+        }
+    }
 }

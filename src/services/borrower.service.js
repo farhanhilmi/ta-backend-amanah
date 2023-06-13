@@ -19,6 +19,7 @@ import {
 import { uploadFileToFirebase } from '../utils/firebase.js';
 import createLoan from './loans/createLoan.js';
 import LoanRepository from '../database/repository/loan.repository.js';
+import paymentModels from '../database/models/loan/payment.models.js';
 
 export default class BorrowerService {
     constructor() {
@@ -28,6 +29,7 @@ export default class BorrowerService {
         this.userModel = usersModel;
         this.loanRepo = new LoanRepository();
         this.loanModel = loanModel;
+        this.paymentModel = paymentModels;
     }
 
     async requestVerifyBorrower(userId, payload, files) {
@@ -88,6 +90,7 @@ export default class BorrowerService {
             const fileUrls = await files.reduce(async (accPromise, file) => {
                 const acc = await accPromise;
                 const category = file.fieldname;
+                console.log('file upload:', file);
                 const path = `borrower/${category}/${userId}-${currentDate}`;
                 const url = await uploadFileToFirebase(file, path);
                 acc[category] = url;
@@ -105,6 +108,8 @@ export default class BorrowerService {
                     },
                 },
             );
+            borrower.status = 'pending';
+            await borrower.save();
         } catch (error) {
             throw error;
         }
@@ -284,6 +289,74 @@ export default class BorrowerService {
 
             // console.log('loans', JSON.stringify(loans, null, 4));
             return loans;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getPaymentSchedule(userId) {
+        try {
+            const loans = await this.paymentModel.aggregate([
+                {
+                    $lookup: {
+                        from: 'loans',
+                        localField: 'loanId',
+                        foreignField: '_id',
+                        as: 'loan',
+                    },
+                },
+                {
+                    $unwind: '$loan',
+                },
+                {
+                    $match: {
+                        $and: [
+                            {
+                                'loan.userId': toObjectId(userId),
+                            },
+                            { 'paymentSchedule.status': 'unpaid' },
+                        ],
+                    },
+                },
+                {
+                    $addFields: {
+                        paymentSchedule: {
+                            $map: {
+                                input: '$paymentSchedule',
+                                as: 'item',
+                                in: {
+                                    amount: '$$item.amount',
+                                    status: '$$item.status',
+                                    date: {
+                                        $dateToString: {
+                                            date: '$$item.date',
+                                            timezone: 'Asia/Jakarta',
+                                            format: '%Y-%m-%d %H:%M',
+                                        },
+                                    },
+                                },
+                            },
+                            // $dateToString: {
+                            //     date: '$paymentSchedule.date',
+                            //     timezone: 'Asia/Jakarta',
+                            //     format: '%d-%m-%Y %H:%M',
+                            // },
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        loan: 0,
+                        userId: 0,
+                        createdDate: 0,
+                        modifyDate: 0,
+                        __v: 0,
+                    },
+                },
+            ]);
+            // console.log('loans', loans[0]);
+            return loans[0];
         } catch (error) {
             throw error;
         }

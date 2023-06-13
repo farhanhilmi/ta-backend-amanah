@@ -5,6 +5,14 @@ import crypto from 'crypto';
 import moment from 'moment-timezone';
 import { RequestError, ValidationError } from './errorHandler.js';
 
+export function isInt(n) {
+    return Number(n) === n && n % 1 === 0;
+}
+
+export function isFloat(n) {
+    return Number(n) === n && n % 1 !== 0;
+}
+
 export const generateRandomCode = () => {
     return Math.floor(Math.random() * 90000) + 10000;
 };
@@ -204,7 +212,6 @@ export const getCurrentDateIndonesia = () => {
 
     var dateString = hari + ', ' + tanggal + ' ' + bulan + ' ' + tahun;
     var time = jam + ':' + menit + ':' + detik;
-
     return { time, date: dateString };
 };
 

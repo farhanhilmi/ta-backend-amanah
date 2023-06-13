@@ -34,6 +34,7 @@ const {
     OAUTH_CLIENT_SECRET,
     OAUTH_CLIENTID,
     OTP_EXPIRED,
+    TAX_AMOUNT_APP,
 } = process.env;
 
 const config = {
@@ -69,6 +70,7 @@ const config = {
     DEEP_LINK_URL,
     ANDROID_PACKAGE_NAME,
     NODE_ENV,
+    TAX_AMOUNT_APP,
 };
 
 export default config;

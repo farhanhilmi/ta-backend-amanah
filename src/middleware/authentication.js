@@ -39,6 +39,17 @@ export const isLender = (req, res, next) => {
     return next();
 };
 
+export const isKYCVerified = (req, res, next) => {
+    const { verifiedKYC } = req.user;
+
+    if (verifiedKYC.toLowerCase() != 'verified') {
+        throw new AuthorizeError(
+            'KYC Anda belum terverifikasi, harap verifikasi terlebih dahulu atau jika sudah melakukan verifikasi harap tunggu sementara kami sedang memverifikasi data Anda',
+        );
+    }
+    return next();
+};
+
 export const isBorrower = (req, res, next) => {
     const { roles } = req.user;
 

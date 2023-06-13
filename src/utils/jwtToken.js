@@ -11,10 +11,18 @@ export const generateTokens = async (user) => {
 
         if (user.roles.toLowerCase() == 'lender') {
             const lender = await lenderModel.findOne({ userId: user._id });
-            verifiedKYC = lender.roles;
+            if (!lender.status) {
+                verifiedKYC = 'not verified';
+            } else {
+                verifiedKYC = lender.status;
+            }
         } else if (user.roles.toLowerCase() == 'borrower') {
             const borrower = await borrowerModels.findOne({ userId: user._id });
-            verifiedKYC = borrower.roles;
+            if (!borrower.status) {
+                verifiedKYC = 'not verified';
+            } else {
+                verifiedKYC = borrower.status;
+            }
         }
 
         const payload = {
@@ -60,10 +68,18 @@ export const regenerateAccessToken = async (user) => {
 
         if (user.roles.toLowerCase() == 'lender') {
             const lender = await lenderModel.findOne({ userId: user._id });
-            verifiedKYC = lender.roles;
+            if (!lender.status) {
+                verifiedKYC = 'not verified';
+            } else {
+                verifiedKYC = lender.status;
+            }
         } else if (user.roles.toLowerCase() == 'borrower') {
             const borrower = await borrowerModels.findOne({ userId: user._id });
-            verifiedKYC = borrower.roles;
+            if (!borrower.status) {
+                verifiedKYC = 'not verified';
+            } else {
+                verifiedKYC = borrower.status;
+            }
         }
         const payload = {
             userId: user._id.toString(),

@@ -13,7 +13,7 @@ export default async (userId) => {
             userId,
             loanLimit: null,
             income: null,
-            status: null,
+            status: 'not verified',
         };
 
         // Create borrower object data
