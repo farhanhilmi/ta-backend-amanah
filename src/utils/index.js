@@ -293,6 +293,7 @@ export const validateVerifyBorrowerRequest = (
         'gender',
         'birthDate',
         'work',
+        'idCardNumber',
     ]);
 
     if (errors.length > 0) {
@@ -341,6 +342,36 @@ export const validateVerifyBorrowerRequest = (
     if (errors.length > 0) {
         throw new ValidationError(
             `${errors} field(s) in relativesContact.secondRelative are required!`,
+        );
+    }
+};
+
+export const validateVerifyLenderRequest = (payload, personal) => {
+    let errors = validateRequestPayload(payload, ['personal']);
+
+    if (errors.length > 0) {
+        throw new ValidationError(`${errors} field(s) are required!`);
+    }
+
+    errors = validateRequestPayload(personal, [
+        'fullName',
+        'gender',
+        'birthDate',
+        'work',
+        'idCardNumber',
+    ]);
+
+    if (errors.length > 0) {
+        throw new ValidationError(
+            `${errors} field(s) in personal are required!`,
+        );
+    }
+
+    errors = validateRequestPayload(personal.work, ['name', 'salary']);
+
+    if (errors.length > 0) {
+        throw new ValidationError(
+            `${errors} field(s) in personal.work are required!`,
         );
     }
 };

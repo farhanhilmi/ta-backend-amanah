@@ -6,7 +6,7 @@ import { omit } from '../../utils/index.js';
 export default async (userId) => {
     try {
         // Check if user already has a borrower account
-        if (await borrowerModels.findOne({ userId })) {
+        if (await borrowerModels.exists({ userId })) {
             return;
         }
         const borrowerData = {
@@ -17,12 +17,12 @@ export default async (userId) => {
         };
 
         // Create borrower object data
-        const newBorrower = await borrowerModels.create(borrowerData);
 
         // create user relatives object data
-        const [work, relatives] = await Promise.allSettled([
+        await Promise.allSettled([
+            await borrowerModels.create(borrowerData),
             await workModels.create({
-                borrowerId: newBorrower._id,
+                userId: userId,
             }),
             await relativesModels.create({ userId }),
         ]);

@@ -61,7 +61,37 @@ export class LenderController {
                 responseData(data, true, 'Success get lender profit', {}),
             );
         } catch (error) {
-            throw error;
+            next(error);
+            // throw error;
+        }
+    }
+
+    async verifyKYC(req, res, next) {
+        try {
+            const { userId } = req.user;
+
+            const payload = {
+                ...req.body,
+
+                // fileName: req.uploadedFileName,
+            };
+
+            await this.lenderServices.requestVerifyLender(
+                userId,
+                payload,
+                req.files,
+            );
+
+            res.status(200).json(
+                responseData(
+                    [],
+                    true,
+                    'Request to verify KYC successfully. Please wait for admin to verify your request.',
+                ),
+            );
+        } catch (error) {
+            next(error);
+            // throw error;
         }
     }
 }

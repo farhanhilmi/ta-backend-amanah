@@ -68,7 +68,7 @@ export default class BorrowerService {
             };
 
             await Promise.allSettled([
-                await borrower.updateOne({ status: 'pending' }),
+                // await borrower.updateOne({ status: 'pending' }),
 
                 await this.relativesModel.findOneAndUpdate(
                     { userId },
@@ -78,7 +78,7 @@ export default class BorrowerService {
                     },
                 ),
                 await this.workModel.findOneAndUpdate(
-                    { borrowerId: borrower._id },
+                    { userId: userId },
                     {
                         salary: personal.work.salary,
                         position: personal.work.name,
@@ -105,6 +105,7 @@ export default class BorrowerService {
                         idCardImage: fileUrls.idCardImage,
                         gender: personal.gender,
                         birthDate: personal.birthDate,
+                        idCardNumber: personal.idCardNumber,
                     },
                 },
             );
@@ -146,15 +147,13 @@ export default class BorrowerService {
                 throw new NotFoundError('User not found!');
             }
 
-            const work = await this.workModel
-                .findOne({ borrowerId: borrower.value._id })
-                .select({
-                    borrowerId: 0,
-                    __v: 0,
-                    createdDate: 0,
-                    modifyDate: 0,
-                    _id: 0,
-                });
+            const work = await this.workModel.findOne({ userId }).select({
+                userId: 0,
+                __v: 0,
+                createdDate: 0,
+                modifyDate: 0,
+                _id: 0,
+            });
 
             // console.log('user', user);
 

@@ -22,6 +22,12 @@ const Routes = () => {
         isLender,
         controller.getProfit.bind(controller),
     );
+    router.put(
+        '/request/verification',
+        authenticateToken,
+        isLender,
+        controller.verifyKYC.bind(controller),
+    );
     // router.post('/funding/auto', controller.postAutoLend.bind(controller));
     router.post(
         '/funding',

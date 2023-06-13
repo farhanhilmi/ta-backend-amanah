@@ -9,21 +9,88 @@ import {
     ValidationError,
 } from '../utils/errorHandler.js';
 import {
-    getCurrentDateIndonesia,
     getCurrentJakartaTime,
-    isFloat,
     toObjectId,
+    transformNestedObject,
     validateRequestPayload,
+    validateVerifyLenderRequest,
 } from '../utils/index.js';
 import config from '../config/index.js';
+import usersModel from '../database/models/users.model.js';
+import workModels from '../database/models/borrower/work.models.js';
+import { uploadFileToFirebase } from '../utils/firebase.js';
 
 export default class LenderService {
     constructor() {
         // this.portfolio = [];
+        this.userModel = usersModel;
         this.lenderModel = lenderModel;
         this.loanModel = loansModels;
         this.fundingModel = fundingModel;
         this.paymentModel = paymentModels;
+        this.workModel = workModels;
+    }
+
+    async requestVerifyLender(userId, payload, files) {
+        try {
+            payload = await transformNestedObject(payload);
+
+            // const user = await this.userModel.findOne({
+            //     _id: toObjectId(userId),
+            // });
+            const lender = await this.lenderModel.findOne({ userId });
+
+            if (!lender) {
+                throw new NotFoundError('lender account not found!');
+            }
+
+            // if (!user.roles.includes('lender')) {
+            //     throw new AuthorizeError('User is not a lender!');
+            // }
+
+            const { personal } = payload;
+
+            // it will throw an error if there is a missing field
+            validateVerifyLenderRequest(payload, personal);
+
+            lender.status = 'pending';
+            await Promise.allSettled([
+                await lender.save(),
+                await this.workModel.findOneAndUpdate(
+                    { userId },
+                    {
+                        salary: personal.work.salary,
+                        position: personal.work.name,
+                    },
+                ),
+            ]);
+
+            const currentDate = Date.now();
+            const fileUrls = await files.reduce(async (accPromise, file) => {
+                const acc = await accPromise;
+                const category = file.fieldname;
+                console.log('file upload:', file);
+                const path = `lender/${category}/${userId}-${currentDate}`;
+                const url = await uploadFileToFirebase(file, path);
+                acc[category] = url;
+                return acc;
+            }, {});
+
+            await this.userModel.findOneAndUpdate(
+                { _id: toObjectId(userId) },
+                {
+                    $set: {
+                        faceImage: fileUrls.faceImage,
+                        idCardImage: fileUrls.idCardImage,
+                        gender: personal.gender,
+                        birthDate: personal.birthDate,
+                        idCardNumber: personal.idCardNumber,
+                    },
+                },
+            );
+        } catch (error) {
+            throw error;
+        }
     }
 
     async getLenderProfile(userId) {

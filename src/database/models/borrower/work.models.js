@@ -22,9 +22,9 @@ const addressData = {
 
 const schema = new Schema(
     {
-        borrowerId: {
+        userId: {
             type: Schema.Types.ObjectId,
-            ref: 'Borrowers',
+            ref: 'users',
             required: true,
         },
         companyName: {
