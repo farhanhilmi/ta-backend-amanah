@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 import { AuthorizeError } from '../utils/errorHandler.js';
+import usersModel from '../database/models/users.model.js';
+import { toObjectId } from '../utils/index.js';
 
 export const authenticateToken = (req, res, next) => {
     const header = req.headers.authorization;
@@ -39,16 +41,16 @@ export const isLender = (req, res, next) => {
     return next();
 };
 
-export const isKYCVerified = (req, res, next) => {
-    const { verifiedKYC } = req.user;
+// export const isKYCVerified = (req, res, next) => {
+//     const user = await usersModel.findOne({ _id: toObjectId(req.user.userId) });
 
-    if (verifiedKYC.toLowerCase() != 'verified') {
-        throw new AuthorizeError(
-            'KYC Anda belum terverifikasi, harap verifikasi terlebih dahulu atau jika sudah melakukan verifikasi harap tunggu sementara kami sedang memverifikasi data Anda',
-        );
-    }
-    return next();
-};
+//     if (user.status.toLowerCase() != 'verified') {
+//         throw new AuthorizeError(
+//             'KYC Anda belum terverifikasi, harap verifikasi terlebih dahulu atau jika sudah melakukan verifikasi harap tunggu sementara kami sedang memverifikasi data Anda',
+//         );
+//     }
+//     return next();
+// };
 
 export const isBorrower = (req, res, next) => {
     const { roles } = req.user;

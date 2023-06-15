@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import UsersController from '../api/users.api.js';
+import { authenticateToken } from '../middleware/authentication.js';
 
 const Routes = () => {
     const router = Router();
@@ -12,6 +13,13 @@ const Routes = () => {
     router.post(
         '/login/otp/resend',
         userController.resendOTPLogin.bind(userController),
+    );
+
+    // KYC STATUS ACCOUNT
+    router.get(
+        '/account/status',
+        authenticateToken,
+        userController.checkKYCStatus.bind(userController),
     );
 
     router.post(

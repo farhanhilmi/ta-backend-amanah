@@ -4,6 +4,7 @@ import fundingModel from '../database/models/loan/funding.models.js';
 import paymentModels from '../database/models/loan/payment.models.js';
 import {
     AuthorizeError,
+    DataConflictError,
     NotFoundError,
     RequestError,
     ValidationError,
@@ -42,6 +43,18 @@ export default class LenderService {
 
             if (!lender) {
                 throw new NotFoundError('lender account not found!');
+            }
+
+            if (lender.status === 'verified') {
+                throw new DataConflictError(
+                    'Anda telah melakukan verifikasi KYC',
+                );
+            }
+
+            if (lender.status === 'pending') {
+                throw new DataConflictError(
+                    'Anda sudah melakukan permintaan verifikasi KYC. Saat ini kami sedang melakukan pengecekan data KYC anda.',
+                );
             }
 
             // if (!user.roles.includes('lender')) {
@@ -167,6 +180,14 @@ export default class LenderService {
                     'You are not authorized to perform this action!',
                 );
             }
+            const lender = await this.lenderModel.findOne({
+                userId: user.userId,
+            });
+            if (lender.status !== 'verified') {
+                throw new AuthorizeError(
+                    'KYC Anda belum terverifikasi, harap verifikasi terlebih dahulu atau jika sudah melakukan verifikasi harap tunggu sementara kami sedang memverifikasi data Anda',
+                );
+            }
 
             const loan = await this.loanModel.findOne({
                 _id: toObjectId(payload.loanId),
@@ -229,9 +250,9 @@ export default class LenderService {
             //     throw RequestError('You cannot fund more than the loan amount');
             // }
 
-            const lender = await this.lenderModel.findOne({
-                userId: user.userId,
-            });
+            // const lender = await this.lenderModel.findOne({
+            //     userId: user.userId,
+            // });
             console.log('lender', lender);
 
             const yieldReturn =

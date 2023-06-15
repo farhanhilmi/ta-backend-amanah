@@ -12,6 +12,21 @@ export default class UsersController {
         this.usersService = new UserService();
     }
 
+    async checkKYCStatus(req, res, next) {
+        try {
+            const { userId, roles } = req.user;
+            const data = await this.usersService.checkKYCStatus(userId, roles);
+            res.status(200).json({
+                status: true,
+                message: 'Success get account status.',
+                data,
+                meta: {},
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async register(req, res, next) {
         try {
             const data = await this.usersService.createUser(req.body);

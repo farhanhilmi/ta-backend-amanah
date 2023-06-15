@@ -15,6 +15,7 @@ import {
     NotFoundError,
     RequestError,
     ValidationError,
+    DataConflictError,
 } from '../utils/errorHandler.js';
 import { uploadFileToFirebase } from '../utils/firebase.js';
 import createLoan from './loans/createLoan.js';
@@ -43,6 +44,18 @@ export default class BorrowerService {
 
             if (!borrower) {
                 throw new NotFoundError('Borrower account not found!');
+            }
+
+            if (borrower.status === 'verified') {
+                throw new DataConflictError(
+                    'Anda telah melakukan verifikasi KYC',
+                );
+            }
+
+            if (borrower.status === 'pending') {
+                throw new DataConflictError(
+                    'Anda sudah melakukan permintaan verifikasi KYC. Saat ini kami sedang melakukan pengecekan data KYC anda.',
+                );
             }
 
             if (!user.roles.includes('borrower')) {
@@ -225,7 +238,7 @@ export default class BorrowerService {
 
             if (borrower.value.status !== 'verified') {
                 throw new AuthorizeError(
-                    'Borrower must be verified to request a loan!',
+                    'KYC Anda belum terverifikasi, harap verifikasi terlebih dahulu atau jika sudah melakukan verifikasi harap tunggu sementara kami sedang memverifikasi data Anda',
                 );
             }
 
@@ -278,11 +291,19 @@ export default class BorrowerService {
     async getLoanHistory(userId, roles) {
         try {
             const loans = await this.loanRepo.getBorrowerLoanHistory(userId);
+            // console.log('loans', loans);
 
             if (!loans) {
                 return {
-                    active: [],
+                    active: {},
                     history: [],
+                };
+            }
+
+            if (loans.active.length < 1) {
+                return {
+                    active: {},
+                    history: loans.history,
                 };
             }
 

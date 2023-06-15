@@ -3,7 +3,7 @@ import BorrowerController from '../api/borrowers.api.js';
 import {
     authenticateToken,
     isBorrower,
-    isKYCVerified,
+    // isKYCVerified,
 } from '../middleware/authentication.js';
 
 const Routes = () => {
@@ -19,7 +19,7 @@ const Routes = () => {
         '/loan',
         authenticateToken,
         isBorrower,
-        isKYCVerified,
+        // isKYCVerified,
         controller.postRequestLoan.bind(controller),
     );
     router.get(

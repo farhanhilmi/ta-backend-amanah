@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { LenderController } from '../api/lenders.api.js';
 import {
     authenticateToken,
-    isKYCVerified,
+    // isKYCVerified,
     isLender,
 } from '../middleware/authentication.js';
 
@@ -33,7 +33,7 @@ const Routes = () => {
         '/funding',
         authenticateToken,
         isLender,
-        isKYCVerified,
+        // isKYCVerified,
         controller.postFundingLoan.bind(controller),
     );
     return router;

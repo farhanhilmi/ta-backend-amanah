@@ -29,6 +29,7 @@ import { generateDynamicLink } from '../utils/firebase.js';
 import { sendMailRequestNewPassword } from '../utils/mail/index.js';
 import createBorrower from './users/createBorrower.js';
 import createLender from './lender/createLender.js';
+import checkKYCStatus from './users/checkKYCStatus.js';
 
 export default class Users {
     constructor() {
@@ -37,6 +38,15 @@ export default class Users {
         this.verifyTokenModel = verifyToken;
         this.refreshTokenRepo = new RefreshTokenRepository();
         this.forgetTokenModel = forgetToken;
+        this.lender;
+    }
+
+    async checkKYCStatus(userId, roles) {
+        try {
+            return await checkKYCStatus(userId, roles);
+        } catch (error) {
+            throw error;
+        }
     }
 
     async createUser(payload) {
