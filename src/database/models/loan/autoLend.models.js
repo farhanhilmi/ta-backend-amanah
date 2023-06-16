@@ -4,22 +4,15 @@ import mongoose from 'mongoose';
 /**
  * - on request = borrower berhasil mengajukan pinjaman
  * - on process = pinjaman sedang didanai oleh lender namun belum semua jumlah terpenuhi
- * - in borrowing = pinjaman sedang berjalan / sedang didanai
+ * - in borrowing = pinjaman sedang berjalan / sedang didanai // sudah penuh
  * - repayment = pinjaman sudah lunas / sudah selesai
  * - late repayment = pinjaman sudah lunas / sudah selesai tapi terlambat
  * - unpaid = pinjaman belum lunas / belum selesai
  */
 const statusOptions = {
     type: String,
-    enum: [
-        'on request',
-        'on process',
-        'in borrowing',
-        'unpaid',
-        'repayment',
-        'late repayment',
-    ],
-    default: 'on request',
+    enum: ['waiting', 'matched', 'in borrowing', 'done'],
+    default: 'waiting',
 };
 
 const Schema = mongoose.Schema;
@@ -47,10 +40,7 @@ const schema = new Schema(
             type: Object,
             default: null,
         },
-        status: {
-            type: Number,
-            default: null,
-        },
+        status: statusOptions,
     },
     {
         timestamps: { createdAt: 'createdDate', updatedAt: 'modifyDate' },

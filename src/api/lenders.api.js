@@ -7,24 +7,24 @@ export class LenderController {
         this.lenderServices = new LenderService();
     }
 
-    // async postAutoLend(req, res, next) {
-    //     try {
-    //         // const { page, limit, sort, order } = req.query;
-    //         const data = await autoLend('', req.body);
-    //         // io.emit(`notification#${userId}`, data);
-    //         PublishMessage(data, 'CREATE_AUTO_LEND', 'Loan');
-    //         res.status(201).json(
-    //             responseData(
-    //                 [],
-    //                 true,
-    //                 'Auto Lend has been created. When the auto lend matches a loan, the loan will be automatically funded. We will send you a notification when this happens via your email.',
-    //                 {},
-    //             ),
-    //         );
-    //     } catch (error) {
-    //         next(error);
-    //     }
-    // }
+    async postAutoLend(req, res, next) {
+        try {
+            const { userId, roles } = req.user;
+            // const { page, limit, sort, order } = req.query;
+            await this.lenderServices.createAutoLend(userId, req.body);
+            // io.emit(`notification#${userId}`, data);
+            res.status(201).json(
+                responseData(
+                    [],
+                    true,
+                    'Auto Lend has been created. When the auto lend matches a loan, the loan will be automatically funded. We will send you a notification when this happens via your email.',
+                    {},
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
 
     async postFundingLoan(req, res, next) {
         try {

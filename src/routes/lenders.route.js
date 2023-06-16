@@ -28,7 +28,11 @@ const Routes = () => {
         isLender,
         controller.verifyKYC.bind(controller),
     );
-    // router.post('/funding/auto', controller.postAutoLend.bind(controller));
+    router.post(
+        '/funding/auto',
+        authenticateToken,
+        controller.postAutoLend.bind(controller),
+    );
     router.post(
         '/funding',
         authenticateToken,

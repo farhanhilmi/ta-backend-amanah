@@ -77,10 +77,12 @@ export const getCurrentJakartaTime = () => {
 };
 
 export const transformNestedObject = async (obj) => {
+    console.log('obj', obj);
     const nestedObject = {};
     await lodash.forEach(obj, (value, key) => {
         lodash.set(nestedObject, key, value);
     });
+    console.log('nestedObject', nestedObject);
 
     return nestedObject;
 };
@@ -90,6 +92,77 @@ export const toTitleCase = (str) => {
         .split(' ')
         .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
         .join(' ');
+};
+
+export const checkInputTypeAutoLend = (
+    // successTransaction,
+    tenorLength,
+    borrowingCategory,
+    yieldRange,
+    amountToLend,
+    // cancelTime,
+) => {
+    // console.log('successTransaction', successTransaction);
+
+    if (typeof amountToLend !== 'number') {
+        throw new ValidationError('Amount to lend must be a number!');
+    }
+
+    // if (typeof cancelTime !== 'number') {
+    //     throw new ValidationError('Cancel time must be a number!');
+    // }
+
+    if (typeof tenorLength !== 'undefined') {
+        if (typeof tenorLength !== 'object') {
+            throw new ValidationError(
+                'Tenor length must be an object of start & end!',
+            );
+        }
+
+        if (
+            typeof tenorLength.start !== 'number' ||
+            typeof tenorLength.end !== 'number'
+        ) {
+            throw new ValidationError(
+                'tenorLength.start and tenorLength.end must be a number!',
+            );
+        }
+    }
+
+    // if (typeof successTransaction !== 'undefined') {
+    //     if (typeof successTransaction !== 'string') {
+    //         throw new ValidationError('Success transaction must be a string!');
+    //     }
+    // }
+
+    if (typeof borrowingCategory !== 'undefined') {
+        if (!Array.isArray(borrowingCategory)) {
+            throw new ValidationError('Borrowing category must be an array!');
+        }
+
+        if (borrowingCategory.length < 1) {
+            throw new ValidationError(
+                'Borrowing category must have at least 1 item!',
+            );
+        }
+    }
+
+    if (typeof yieldRange !== 'undefined') {
+        if (typeof yieldRange !== 'object') {
+            throw new ValidationError(
+                'Yield range must be an object of start & end!',
+            );
+        }
+
+        if (
+            typeof yieldRange.start !== 'number' ||
+            typeof yieldRange.end !== 'number'
+        ) {
+            throw new ValidationError(
+                'yieldRange.start and yieldRange.end must be a number!',
+            );
+        }
+    }
 };
 
 /**

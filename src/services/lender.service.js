@@ -10,6 +10,7 @@ import {
     ValidationError,
 } from '../utils/errorHandler.js';
 import {
+    checkInputTypeAutoLend,
     getCurrentJakartaTime,
     toObjectId,
     transformNestedObject,
@@ -20,6 +21,8 @@ import config from '../config/index.js';
 import usersModel from '../database/models/users.model.js';
 import workModels from '../database/models/borrower/work.models.js';
 import { uploadFileToFirebase } from '../utils/firebase.js';
+import autoLendModels from '../database/models/loan/autoLend.models.js';
+import createAutoLend from './loans/createAutoLend.js';
 
 export default class LenderService {
     constructor() {
@@ -30,6 +33,7 @@ export default class LenderService {
         this.fundingModel = fundingModel;
         this.paymentModel = paymentModels;
         this.workModel = workModels;
+        this.autoLendModel = autoLendModels;
     }
 
     async requestVerifyLender(userId, payload, files) {
@@ -429,6 +433,58 @@ export default class LenderService {
 
     async createAutoLend(userId, payload) {
         try {
+            const {
+                // successTransaction, // string of success transaction. e.g '2'
+                tenorLength,
+                borrowingCategory, // array of borrowing category e.g ['personal', 'business']
+                yieldRange,
+                amountToLend, // jumlah yang akan dipinjamkan. e.g '1000000'
+                // cancelTime, // waktu untuk membatalkan auto lend. e.g 3 (3 days)
+            } = payload;
+
+            const errors = validateRequestPayload(payload, [
+                'amountToLend',
+                'tenorLength',
+                'borrowingCategory',
+                'yieldRange',
+                // 'cancelTime',
+            ]);
+
+            if (errors.length > 0) {
+                throw new ValidationError(`${errors} field(s) are required!`);
+            }
+            checkInputTypeAutoLend(
+                tenorLength,
+                borrowingCategory,
+                yieldRange,
+                amountToLend,
+                // cancelTime,
+            );
+
+            const autoLend = await this.autoLendModel.countDocuments({
+                userId,
+                // status done or active
+                status: {
+                    $in: ['waiting', 'matched'],
+                },
+            });
+            if (autoLend > 0) {
+                throw new DataConflictError('You already have auto lend in!');
+            }
+            createAutoLend({
+                userId,
+                tenorLength,
+                borrowingCategory,
+                yieldRange,
+                amountToLend,
+            });
+            // return {
+            //     userId,
+            //     tenorLength,
+            //     borrowingCategory,
+            //     yieldRange,
+            //     amountToLend,
+            // };
         } catch (error) {
             throw error;
         }
