@@ -1,4 +1,5 @@
 import BorrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
+// import BorrowerContractModels from '../../database/models/loan/BorrowerContract.models.js';
 import loansModels from '../../database/models/loan/loans.models.js';
 import usersModel from '../../database/models/users.model.js';
 import { toObjectId } from '../../utils/index.js';
@@ -37,6 +38,8 @@ export default async (payload) => {
             'https://www.google.com/search?q=ini+isi+halaman+validasi+contract.&oq=ini+isi+halaman+validasi+contract.&aqs=edge..69i57.30981j0j1&sourceid=chrome&ie=UTF-8';
         const qrImage = await generateQrImage(qrData);
         const pdfLink = await generateContractPDF({
+            userId: data.userId,
+            loanId: loan.value._id.toString(),
             borrowerName: borrower.value.name,
             // borrowerAddress: borrower.address,
             borrowerEmail: borrower.value.email,

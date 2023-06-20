@@ -235,7 +235,10 @@ export default class BorrowerService {
                 }),
                 this.borrowerModel.findOne({ userId: user.userId }),
             ]);
-
+            // console.log('borrower', borrower.value);
+            if (!borrower.value) {
+                throw new NotFoundError('Borrower not found!');
+            }
             if (borrower.value.status !== 'verified') {
                 throw new AuthorizeError(
                     'KYC Anda belum terverifikasi, harap verifikasi terlebih dahulu atau jika sudah melakukan verifikasi harap tunggu sementara kami sedang memverifikasi data Anda',

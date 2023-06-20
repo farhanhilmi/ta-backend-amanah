@@ -81,7 +81,7 @@ export const sendMailRequestNewPassword = async (email, subject, link) => {
     );
 
     await sendMail(dataMail, template);
-    console.log('MASOOKK');
+    // console.log('MASOOKK');
     return true;
 };
 

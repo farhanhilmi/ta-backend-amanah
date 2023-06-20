@@ -33,9 +33,14 @@ export class LenderController {
                 userId,
                 roles,
             };
-            await this.lenderServices.createFundings(user, req.body);
+            const contractLink = await this.lenderServices.createFundings(
+                user,
+                req.body,
+            );
 
-            res.status(201).json(responseData([], true, 'Success', {}));
+            res.status(201).json(
+                responseData({ contract: contractLink }, true, 'Success', {}),
+            );
         } catch (error) {
             next(error);
         }

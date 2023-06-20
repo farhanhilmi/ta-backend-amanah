@@ -4,3 +4,4 @@ serviceAccountKey.js
 *.zip
 dist
 keys*
+coverage

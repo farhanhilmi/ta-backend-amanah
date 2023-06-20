@@ -14,12 +14,6 @@ import { fileURLToPath } from 'url';
 import path, { dirname } from 'path';
 import config from '../config/index.js';
 
-// Get the current module's file path
-const __filename = fileURLToPath(import.meta.url);
-
-// Get the directory name from the file path
-const __dirname = dirname(__filename);
-
 const PUBLIC_KEY_PATH = './keys/public.pem';
 const PRIVATE_KEY_PATH = './keys/private_decrypted.pem';
 
@@ -44,6 +38,8 @@ export const verifySignature = (data, signature) => {
 
 export const generateQrImage = async (qrData) => await qr.toBuffer(qrData);
 
+const basedir = path.resolve(process.cwd());
+
 // Generate the PDF document
 export const generateContractPDF = async ({
     borrowerName,
@@ -55,16 +51,23 @@ export const generateContractPDF = async ({
     loanTenor,
     qrImage,
     paymentSchema,
+    userId,
+    loanId,
 }) => {
     return new Promise((resolve, reject) => {
+        // Get the current module's file path
+        // const __filename = fileURLToPath(import.meta.url);
+
+        // Get the directory name from the file path
+        // const __dirname = dirname(__filename);
+
         // const pdfPath = 'output-sign.pdf'; // Specify the path to save the PDF
-        const signDate = new Date();
         let pdfPath = '';
         // if nodeport is production, set pdfpath to /tmp/output-sign.pdf
         if (config.NODE_ENV === 'production') {
             pdfPath = '/tmp/output-sign.pdf';
         } else {
-            pdfPath = path.join(__dirname, 'temp.pdf');
+            pdfPath = 'temp.pdf';
         }
 
         const doc = new PDFDocument({
@@ -82,9 +85,9 @@ export const generateContractPDF = async ({
         // doc.addPage();
         // Add content to the PDF
         doc.fontSize(12);
-        doc.text(
+        doc.font('Helvetica-Bold').text('Pihak Peminjam');
+        doc.font('Helvetica').text(
             `${borrowerName}
-Alamat ga yaa
 ${borrowerPhone}
 ${borrowerEmail}
     `,
@@ -101,6 +104,9 @@ ${borrowerEmail}
         //     `,
         //         { align: 'left' },
         //     );
+        doc.moveDown();
+        doc.moveDown();
+        doc.moveDown();
         doc.moveDown();
         doc.font('Helvetica-Bold').text(
             `Perjanjian Pinjaman Amanah Peer-to-Peer Lending Syariah
@@ -223,35 +229,47 @@ ${borrowerEmail}
         const qrImageWidth = 100;
         const qrImageHeight = 100;
 
-        const qrImageX = doc.page.width - qrImageWidth - 65; // Adjust the position as needed
+        const qrImageX = qrImageWidth - 33; // Adjust the position as needed
         const qrImageY = doc.page.height - qrImageHeight - 75; // Adjust the position as needed
 
         doc.text(
             `Pihak Peminjam:
 ${borrowerName}
     `,
-            doc.page.width - 300,
+            doc.page.width - 420,
             doc.page.height - 155,
+            { width: 160 },
             // { align: 'right' },
         );
         const { time, date } = getCurrentDateIndonesia();
-        doc.text(
+        doc.fontSize(12).text(
             `${time} WIB 
 ${date}`,
-            doc.page.width - 300,
-            doc.page.height - 115,
+            doc.page.width - 420,
+            doc.page.height - 110,
             // { align: 'right' },
         );
+        // QR
         doc.image(qrImageEmbed, qrImageX, qrImageY, {
             width: qrImageWidth,
             height: qrImageHeight,
         });
+        // LINK
         doc.fontSize(9).text(
             'Scan QR code to validate contract.',
-            doc.page.width - 260,
+            qrImageX + 5,
             doc.page.height - 65,
-            { align: 'right' },
         );
+
+        doc.fontSize(8)
+            .fillColor('gray')
+            .text(
+                `* Penandatanganan perjanjian ini menggunakkan waktu GMT+7 (Waktu Indonesia Barat).`,
+                doc.page.width - 420,
+                doc.page.height - 81,
+                // {  },
+                // { align: 'right' },
+            );
 
         // doc.text('Scan QR code to validate contract.', { align: 'right' });
 
@@ -266,16 +284,17 @@ ${date}`,
             try {
                 // Upload the PDF file to Firebase Storage
                 const CONTRACT_ENCRYPTION_KEY =
-                    process.env.CONTRACT_ENCRYPTION_KEY ||
+                    config.CONTRACT_ENCRYPTION_KEY ||
                     'c3a72c3f6d1e88c82a5b74fb5241a8f195b7e5e4e4c51f0a1d3b0d234950e203';
-                const combinedValues = `c3a72c3f6d1e88c82a5b74f-c3a72c3f6d1e88c82a5b74f-c3a72c3f6d1e88c82a5b74f`;
+
+                const combinedValues = `${userId}-${loanId}`;
 
                 const { encryptedValues } = encryptCombinedValues(
                     combinedValues,
                     CONTRACT_ENCRYPTION_KEY,
                 );
 
-                const storageDir = `contracts/loan`;
+                const storageDir = `contracts/lender/loan`;
                 const [file] = await bucket.upload(pdfPath, {
                     destination: `${storageDir}/${encryptedValues}.pdf`,
                     public: true,
@@ -293,7 +312,7 @@ ${date}`,
 
                 // }
 
-                console.log('File uploaded successfully: ');
+                // console.log('File uploaded successfully: ');
                 resolve(
                     `https://storage.googleapis.com/${bucket.name}/${storageDir}/${encryptedValues}.pdf`,
                 );

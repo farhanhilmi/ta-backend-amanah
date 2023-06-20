@@ -23,6 +23,8 @@ import workModels from '../database/models/borrower/work.models.js';
 import { uploadFileToFirebase } from '../utils/firebase.js';
 import autoLendModels from '../database/models/loan/autoLend.models.js';
 import createAutoLend from './loans/createAutoLend.js';
+import lenderContractModels from '../database/models/loan/lenderContract.models.js';
+import lenderSignature from '../utils/lenderSignature.js';
 
 export default class LenderService {
     constructor() {
@@ -34,11 +36,25 @@ export default class LenderService {
         this.paymentModel = paymentModels;
         this.workModel = workModels;
         this.autoLendModel = autoLendModels;
+        this.lenderContract = lenderContractModels;
     }
 
     async requestVerifyLender(userId, payload, files) {
         try {
             payload = await transformNestedObject(payload);
+            // console.log('files', files);
+
+            if (files.length < 2) {
+                throw new ValidationError(
+                    'idCardImage and faceImage must be provided!',
+                );
+            }
+
+            // if (!payload.idCardImage || !payload.faceImage) {
+            //     throw new ValidationError(
+            //         'idCardImage and faceImage must be provided!',
+            //     );
+            // }
 
             // const user = await this.userModel.findOne({
             //     _id: toObjectId(userId),
@@ -112,7 +128,6 @@ export default class LenderService {
 
     async getLenderProfile(userId) {
         try {
-            console.log('MASUK');
             if (!userId) {
                 throw new ValidationError('user Id is required!');
             }
@@ -327,7 +342,16 @@ export default class LenderService {
                 loan.status = 'on process';
             }
 
+            // Create signature for the loan lender
+            const contractLink = await lenderSignature({
+                loanId: loan._id.toString(),
+                userId: user.userId,
+                lenderId: lender._id.toString(),
+                borrowerId: loan.borrowerId,
+            });
+
             loan.save();
+            return contractLink;
             // const loanthis.loanModel.findOneAndUpdate({_id: payload.loanId}, {status: 'in borrowing'})
         } catch (error) {
             throw error;

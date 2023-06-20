@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import {
     hashPassword,
     validateRequestPayload,
@@ -108,6 +109,7 @@ export default class Users {
                     'Failed to create new account. Please try again later',
                 );
             }
+
             await sendVerifyAccount(user);
             delete Object.assign(user, { ['userId']: user['_id'] })['_id'];
             return user;
@@ -295,7 +297,7 @@ export default class Users {
                 'email',
                 'platform',
             ]);
-            const { email, platform } = payload;
+            let { email, platform } = payload;
             if (errors.length > 0) {
                 throw new ValidationError(`${errors} field(s) is required!`);
             }

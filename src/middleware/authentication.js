@@ -11,7 +11,8 @@ export const authenticateToken = (req, res, next) => {
     if (!token) {
         return res.status(403).json({
             success: false,
-            message: 'Token is required for authentication',
+            message:
+                'You are not authorized. Please login first to access this page',
             data: [],
         });
     }

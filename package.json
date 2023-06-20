@@ -4,13 +4,23 @@
     "description": "",
     "main": "index.js",
     "type": "module",
+    "jest": {
+        "transform": {
+            "^.+\\.js$": "babel-jest"
+        },
+        "verbose": true,
+        "setupFilesAfterEnv": [
+            "<rootDir>/src/tests/setupTest.js"
+        ]
+    },
     "scripts": {
-        "test": "jest --coverage --detectOpenHandles",
+        "test": "set NODE_ENV=development&& jest --coverage",
         "start": "set NODE_ENV=production&& node ./src/server.js",
         "dev": "set NODE_ENV=development&& nodemon ./src/server.js",
         "gcp-change": "gcloud config set project amanah-syariah",
         "deploy": "gcloud app deploy",
-        "log": "gcloud app logs tail -s default"
+        "log": "gcloud app logs tail -s default",
+        "convert": "babel src -d dist --ignore ./node_modules"
     },
     "author": "",
     "license": "ISC",
@@ -31,6 +41,7 @@
         "morgan": "^1.10.0",
         "mustache": "^4.2.0",
         "nodemailer": "^6.9.3",
+        "pdf-lib": "^1.17.1",
         "pdfkit": "^0.13.0",
         "qrcode": "^1.5.3",
         "underscore": "^1.13.6"
@@ -39,9 +50,11 @@
         "@babel/cli": "^7.22.5",
         "@babel/core": "^7.22.5",
         "@babel/node": "^7.22.5",
+        "@babel/plugin-syntax-import-meta": "^7.10.4",
         "@babel/plugin-transform-modules-commonjs": "^7.22.5",
         "@babel/preset-env": "^7.22.5",
         "babel-jest": "^29.5.0",
+        "got": "^13.0.0",
         "jest": "^29.5.0",
         "mongodb-memory-server": "^8.12.2",
         "nodemon": "^2.0.22"

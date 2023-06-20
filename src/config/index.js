@@ -35,6 +35,7 @@ const {
     OAUTH_CLIENTID,
     OTP_EXPIRED,
     TAX_AMOUNT_APP,
+    CONTRACT_ENCRYPTION_KEY,
 } = process.env;
 
 const config = {
@@ -71,6 +72,7 @@ const config = {
     ANDROID_PACKAGE_NAME,
     NODE_ENV,
     TAX_AMOUNT_APP,
+    CONTRACT_ENCRYPTION_KEY,
 };
 
 export default config;
