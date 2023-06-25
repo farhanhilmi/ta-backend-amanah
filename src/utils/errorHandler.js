@@ -15,6 +15,10 @@ export const ERROR_STATUS = {
         code: 401,
         message: 'Invalid Credentials',
     },
+    IUNSUFFICIENT_BALANCE: {
+        code: 402,
+        message: 'Insufficient Balance',
+    },
     UN_AUTHORIZED: {
         code: 403,
         message: 'Unauthorized',
@@ -93,7 +97,15 @@ export class AuthorizeError extends ErrorHandler {
         );
     }
 }
-
+export class InsufficientError extends ErrorHandler {
+    constructor(message = ERROR_STATUS.IUNSUFFICIENT_BALANCE.message) {
+        super(
+            ERROR_STATUS.IUNSUFFICIENT_BALANCE.code,
+            message,
+            ERROR_STATUS.IUNSUFFICIENT_BALANCE.message,
+        );
+    }
+}
 export class NotFoundError extends ErrorHandler {
     constructor(message = ERROR_STATUS.NOT_FOUND.message) {
         super(

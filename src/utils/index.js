@@ -4,6 +4,15 @@ import lodash from 'lodash';
 import crypto from 'crypto';
 import moment from 'moment-timezone';
 import { RequestError, ValidationError } from './errorHandler.js';
+import { v4 as uuidV4 } from 'uuid';
+
+export const generateUUID = () => {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 8);
+    const uniqueID = `${timestamp}${randomString}`;
+
+    return uniqueID;
+};
 
 export function isInt(n) {
     return Number(n) === n && n % 1 === 0;
@@ -189,6 +198,9 @@ export const validateRequestPayload = (payload, requiredFields = []) => {
         //     }
         // }
 
+        // if (!payload) {
+        //     errorFields.push(field);
+        // } else {
         if (!Object.hasOwn(payload, field)) {
             errorFields.push(field);
         } else {
@@ -196,6 +208,7 @@ export const validateRequestPayload = (payload, requiredFields = []) => {
                 errorFields.push(field);
             }
         }
+        // }
     });
 
     return errorFields.join(', ');

@@ -25,6 +25,7 @@ import autoLendModels from '../database/models/loan/autoLend.models.js';
 import createAutoLend from './loans/createAutoLend.js';
 import lenderContractModels from '../database/models/loan/lenderContract.models.js';
 import lenderSignature from '../utils/lenderSignature.js';
+import LenderRepository from '../database/repository/lender.repository.js';
 
 export default class LenderService {
     constructor() {
@@ -37,6 +38,7 @@ export default class LenderService {
         this.workModel = workModels;
         this.autoLendModel = autoLendModels;
         this.lenderContract = lenderContractModels;
+        this.lenderRepository = new LenderRepository();
     }
 
     async requestVerifyLender(userId, payload, files) {
@@ -121,6 +123,38 @@ export default class LenderService {
                     },
                 },
             );
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getPortfolio(userId) {
+        try {
+            if (!userId) {
+                throw new ValidationError('user Id is required!');
+            }
+
+            const result = await this.lenderRepository.getLenderPortfolio(
+                userId,
+            );
+            console.log('result', JSON.stringify(result, null, 2));
+            const formattedResult = {
+                active: {
+                    summary: {
+                        totalFunding: 0,
+                        totalYield: 0,
+                    },
+                    funding: [],
+                },
+                done: {
+                    summary: {
+                        totalFunding: 0,
+                        totalYield: 0,
+                    },
+                    funding: [],
+                },
+            };
+            return result[0] ? result[0] : formattedResult;
         } catch (error) {
             throw error;
         }
@@ -296,12 +330,13 @@ export default class LenderService {
                 loan.status = 'in borrowing';
                 const paymentSchedule = [];
                 const paymentDate = new Date(getCurrentJakartaTime());
+                const totalBill =
+                    loan.amount +
+                    loan.yieldReturn +
+                    parseInt(config.TAX_AMOUNT_APP);
                 if (loan.paymentSchema === 'Pelunasan Cicilan') {
                     let paymentDateIncrement = 0;
-                    const totalBill =
-                        loan.amount +
-                        loan.yieldReturn +
-                        parseInt(config.TAX_AMOUNT_APP);
+
                     const monthlyPayment = Math.floor(totalBill / loan.tenor); // Calculate the integer part of the monthly payment
                     const lastMonthPayment =
                         totalBill - monthlyPayment * (loan.tenor - 1); // Calculate the payment for the last month

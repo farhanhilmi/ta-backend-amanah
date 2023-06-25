@@ -71,6 +71,20 @@ export class LenderController {
         }
     }
 
+    async getPortfolio(req, res, next) {
+        try {
+            const data = await this.lenderServices.getPortfolio(
+                req.user.userId,
+            );
+            res.status(200).json(
+                responseData(data, true, 'Success get lender profit', {}),
+            );
+        } catch (error) {
+            next(error);
+            // throw error;
+        }
+    }
+
     async verifyKYC(req, res, next) {
         try {
             const { userId } = req.user;

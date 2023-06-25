@@ -31,6 +31,7 @@ import { sendMailRequestNewPassword } from '../utils/mail/index.js';
 import createBorrower from './users/createBorrower.js';
 import createLender from './lender/createLender.js';
 import checkKYCStatus from './users/checkKYCStatus.js';
+import createBalance from './users/createBalance.js';
 
 export default class Users {
     constructor() {
@@ -167,6 +168,7 @@ export default class Users {
 
             if (user.roles.toLowerCase() == 'borrower') createBorrower(userId);
             if (user.roles.toLowerCase() == 'lender') createLender(userId);
+            createBalance(userId, user.name, user.roles);
 
             await this.verifyTokenModel.deleteMany({ userId });
 
@@ -329,6 +331,7 @@ export default class Users {
             const forgetPass = await this.forgetTokenModel.findOne({
                 userId: user._id,
             });
+
             if (forgetPass) {
                 this.forgetTokenModel.findByIdAndUpdate(
                     { userId: user._id },

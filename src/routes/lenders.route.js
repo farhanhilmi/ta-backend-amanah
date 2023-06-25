@@ -17,6 +17,12 @@ const Routes = () => {
         controller.getLender.bind(controller),
     );
     router.get(
+        '/funding',
+        authenticateToken,
+        isLender,
+        controller.getPortfolio.bind(controller),
+    );
+    router.get(
         '/profit',
         authenticateToken,
         isLender,

@@ -13,12 +13,12 @@ export const formatData = (data) => {
 
 export const responseData = (
     data = [],
-    status = 'OK',
+    status = true,
     message = 'success',
     meta = {},
 ) => {
     return {
-        status,
+        success: status,
         message,
         data,
         meta,

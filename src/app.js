@@ -5,6 +5,7 @@ import Routes from './routes/index.js';
 import busboy from 'busboy';
 import { fileURLToPath } from 'url';
 import path, { dirname } from 'path';
+import { notificationListener } from './utils/midtrans.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -100,6 +101,8 @@ export default async () => {
         // Load API Routes
         Routes(app);
 
+        // app.post('/payment/notification', notificationListener);
+
         // API ENDPOINT NOT FOUND
         app.use((req, res, next) => {
             const error = new Error("API endpoint doesn't exist!");
@@ -115,9 +118,10 @@ export default async () => {
                 ? 'Internal Server Error'
                 : error.message;
             res.status(error.statusCode || 500).json({
-                status: !error.statusCode
-                    ? 'Internal Server Error'
-                    : error.status,
+                // status: !error.statusCode
+                //     ? 'Internal Server Error'
+                //     : error.status,
+                success: false,
                 data: [],
                 message,
             });

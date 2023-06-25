@@ -36,6 +36,11 @@ const {
     OTP_EXPIRED,
     TAX_AMOUNT_APP,
     CONTRACT_ENCRYPTION_KEY,
+    MIDTRANST_MERCHANT_ID,
+    MIDTRANST_CLIENT_KEY,
+    MIDTRANST_SERVER_KEY,
+    FLIP_SECRET_KEY,
+    FLIP_BASIC_AUTH,
 } = process.env;
 
 const config = {
@@ -73,6 +78,11 @@ const config = {
     NODE_ENV,
     TAX_AMOUNT_APP,
     CONTRACT_ENCRYPTION_KEY,
+    MIDTRANST_MERCHANT_ID,
+    MIDTRANST_CLIENT_KEY,
+    MIDTRANST_SERVER_KEY,
+    FLIP_SECRET_KEY,
+    FLIP_BASIC_AUTH,
 };
 
 export default config;

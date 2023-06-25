@@ -14,4 +14,6 @@ conn.on('error', () =>
 );
 conn.once('open', () => console.info('Connection to Database is successful'));
 
+export const session = await mongoose.startSession();
+
 export default conn;
