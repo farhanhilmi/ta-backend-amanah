@@ -5,6 +5,7 @@ import paymentModels from '../database/models/loan/payment.models.js';
 import {
     AuthorizeError,
     DataConflictError,
+    InsufficientError,
     NotFoundError,
     RequestError,
     ValidationError,
@@ -26,6 +27,7 @@ import createAutoLend from './loans/createAutoLend.js';
 import lenderContractModels from '../database/models/loan/lenderContract.models.js';
 import lenderSignature from '../utils/lenderSignature.js';
 import LenderRepository from '../database/repository/lender.repository.js';
+import balanceModel from '../database/models/balance.model.js';
 
 export default class LenderService {
     constructor() {
@@ -39,6 +41,7 @@ export default class LenderService {
         this.autoLendModel = autoLendModels;
         this.lenderContract = lenderContractModels;
         this.lenderRepository = new LenderRepository();
+        this.balanceModel = balanceModel;
     }
 
     async requestVerifyLender(userId, payload, files) {
@@ -269,6 +272,19 @@ export default class LenderService {
             if (funding) {
                 throw new ValidationError(
                     'You already funded this loan request',
+                );
+            }
+
+            const { balance } = await this.balanceModel.findOne(
+                {
+                    userId: user.userId,
+                },
+                { balance: 1, _id: 0 },
+            );
+
+            if (payload.amount > balance) {
+                throw new InsufficientError(
+                    "You don't have enough balance to fund this loan request. Please top up your balance before funding this loan request.",
                 );
             }
 

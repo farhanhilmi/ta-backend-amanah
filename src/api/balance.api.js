@@ -55,6 +55,18 @@ export default class BorrowerController {
         }
     }
 
+    async deleteBankAccount(req, res, next) {
+        try {
+            const { userId } = req.user;
+            await this.balanceService.deleteBankAccount(userId, req.body);
+            res.status(200).json(
+                responseData([], true, 'Success delete bank account'),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async inquireBankAccount(req, res, next) {
         try {
             const payload = req.query;
@@ -94,10 +106,15 @@ export default class BorrowerController {
     async depositBalance(req, res, next) {
         try {
             const { userId } = req.user;
+            const host = req.header('host');
+            var origin = req.headers.host;
+
             const data = await this.balanceService.topUpBalance(
+                origin,
                 userId,
                 req.body,
             );
+
             res.status(200).json(
                 responseData(data, true, 'Success top up balance'),
             );

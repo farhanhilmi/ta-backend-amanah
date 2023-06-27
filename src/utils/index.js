@@ -6,6 +6,10 @@ import moment from 'moment-timezone';
 import { RequestError, ValidationError } from './errorHandler.js';
 import { v4 as uuidV4 } from 'uuid';
 
+export function isAccountIncluded(dataList, value) {
+    return dataList.some((item) => item.accountNumber === value);
+}
+
 export const generateUUID = () => {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 8);

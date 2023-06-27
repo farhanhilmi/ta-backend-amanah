@@ -266,6 +266,13 @@ export default class Users {
         }
     }
 
+    async logout(payload) {
+        try {
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async refreshToken(payload) {
         try {
             const { token } = payload;

@@ -9,6 +9,7 @@ import {
 } from '../utils/errorHandler.js';
 import {
     generateUUID,
+    isAccountIncluded,
     omit,
     toObjectId,
     validateRequestPayload,
@@ -203,6 +204,7 @@ export default class BalanceService {
             const errors = validateRequestPayload(payload, [
                 'accountNumber',
                 'bankCode',
+                'bankName',
             ]);
 
             if (errors.length > 0) {
@@ -229,10 +231,46 @@ export default class BalanceService {
                 { userId },
                 { account: 1 },
             );
+
+            if (isAccountIncluded(balance.account, payload.accountNumber)) {
+                throw new DataConflictError('Bank account already exist');
+            }
+
             balance.account.push({
                 accountNumber: payload.accountNumber,
                 bankCode: payload.bankCode,
+                bankName: payload.bankName,
             });
+            await balance.save();
+
+            return true;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteBankAccount(userId, payload) {
+        try {
+            const errors = validateRequestPayload(payload, ['accountNumber']);
+
+            if (errors.length > 0) {
+                throw new ValidationError(`${errors} field(s) are required!`);
+            }
+
+            const balance = await this.balanceModel.findOne({ userId });
+            // console.log(userId);
+            if (!balance) {
+                throw new NotFoundError('Bank account not found');
+            }
+            if (!isAccountIncluded(balance.account, payload.accountNumber)) {
+                throw new NotFoundError('Bank account not found');
+            }
+
+            // console.log(balance);
+
+            balance.account = balance.account.filter(
+                (item) => item.accountNumber !== payload.accountNumber,
+            );
             await balance.save();
 
             return true;
@@ -276,8 +314,10 @@ export default class BalanceService {
         }
     }
 
-    async topUpBalance(userId, payload) {
+    async topUpBalance(host, userId, payload) {
         try {
+            console.log('host', host);
+            // return;
             const errors = validateRequestPayload(payload, ['amount']);
             if (errors.length > 0) {
                 throw new ValidationError(`${errors} field(s) are required!`);
@@ -315,6 +355,7 @@ export default class BalanceService {
                 senderPhoneNumber: user.phoneNumber,
                 senderEmail: user.email,
                 senderAddress: 'Indonesia',
+                isWebsite: payload.isWebsite,
             });
 
             await this.transactionModel.create({

@@ -77,6 +77,7 @@ export const createPaymentIn = async ({
     senderEmail,
     senderPhoneNumber,
     senderAddress,
+    isWebsite = false,
     // senderBank,
     // senderBankType,
     step = 2,
@@ -94,6 +95,9 @@ export const createPaymentIn = async ({
             sender_phone_number: senderPhoneNumber,
             sender_address: senderAddress,
         };
+        if (isWebsite === true) {
+            data.redirect_url = 'https://amanahsyariah.vercel.app/lender';
+        }
         const result = await axios.post(`${FLIP_API}/v2/pwf/bill`, data, {
             headers: {
                 Authorization: `Basic ${config.FLIP_BASIC_AUTH}`,

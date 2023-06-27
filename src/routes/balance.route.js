@@ -64,6 +64,14 @@ const Routes = () => {
         controller.addBankAccount.bind(controller),
     );
 
+    router.delete(
+        '/account',
+        authenticateToken,
+        // isLender,
+        // isKYCVerified,
+        controller.deleteBankAccount.bind(controller),
+    );
+
     router.get(
         '/banks',
         authenticateToken,
