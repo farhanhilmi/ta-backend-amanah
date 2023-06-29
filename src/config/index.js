@@ -3,13 +3,13 @@ import dotenv from 'dotenv';
 import path, { join } from 'path';
 
 const NODE_ENV = process.env.NODE_ENV;
-const env = `${NODE_ENV}.env`;
-console.log('current env:', env);
+const env = NODE_ENV == 'test' ? 'development.env' : `${NODE_ENV}.env`;
 
 const basedir = path.resolve(process.cwd());
 dotenv.config({
-    path: join(basedir, `${NODE_ENV}.env`),
+    path: join(basedir, env),
 });
+console.log('current env:', env);
 
 const {
     APP_NAME,

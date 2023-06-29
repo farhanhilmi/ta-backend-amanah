@@ -1,5 +1,6 @@
 import { toObjectId } from '../../utils/index.js';
 import lenderModel from '../models/lender/lender.model.js';
+import fundingModels from '../models/loan/funding.models.js';
 
 export default class LenderRepository {
     // constructor() {
@@ -7,7 +8,7 @@ export default class LenderRepository {
     // }
 
     async getLenderPortfolio(userId) {
-        const result = await lenderModel.aggregate([
+        const result = await fundingModels.aggregate([
             {
                 $match: {
                     userId: toObjectId(userId),
@@ -59,7 +60,17 @@ export default class LenderRepository {
                     active: {
                         $push: {
                             $cond: [
-                                { $eq: ['$Loan.status', 'on process'] },
+                                {
+                                    $in: [
+                                        '$Loan.status',
+                                        [
+                                            'on process',
+                                            'on request',
+                                            'in borrowing',
+                                            'unpaid',
+                                        ],
+                                    ],
+                                },
                                 {
                                     funds: '$funds',
                                     Loan: '$Loan',
@@ -71,7 +82,13 @@ export default class LenderRepository {
                     done: {
                         $push: {
                             $cond: [
-                                { $eq: ['$Loan.status', 'repayment'] },
+                                // { $eq: ['$Loan.status', 'repayment'] },
+                                {
+                                    $in: [
+                                        '$Loan.status',
+                                        ['repayment', 'late repayment'],
+                                    ],
+                                },
                                 {
                                     funds: '$funds',
                                     Loan: '$Loan',
@@ -184,6 +201,7 @@ export default class LenderRepository {
             },
             {
                 $project: {
+                    _id: 0,
                     active: {
                         summary: '$active.summary',
                         funding: {
@@ -238,6 +256,7 @@ export default class LenderRepository {
                     },
                 },
             },
+
             // {
             //     $project: {
             //         active: {

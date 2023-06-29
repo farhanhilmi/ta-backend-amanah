@@ -119,6 +119,7 @@ export default class LoanRepository {
                                 yieldReturn: '$yieldReturn',
                                 amount: '$amount',
                                 tenor: '$tenor',
+                                status: '$status',
                                 totalFunding: {
                                     $cond: {
                                         if: { $eq: ['$funding', []] },
@@ -160,7 +161,32 @@ export default class LoanRepository {
                                 },
                             },
                         },
-                        history: '$history',
+                        // history: '$history',
+                        history: {
+                            $filter: {
+                                input: '$history',
+                                as: 'loan',
+                                cond: {
+                                    $or: [
+                                        {
+                                            $eq: [
+                                                '$$loan.status',
+                                                'in borrowing',
+                                            ],
+                                        },
+                                        {
+                                            $eq: ['$$loan.status', 'repayment'],
+                                        },
+                                        {
+                                            $eq: [
+                                                '$$loan.status',
+                                                'late repayment',
+                                            ],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
                     },
                 },
                 {

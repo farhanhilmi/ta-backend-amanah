@@ -5,12 +5,12 @@ import Routes from './routes/index.js';
 import busboy from 'busboy';
 import { fileURLToPath } from 'url';
 import path, { dirname } from 'path';
-import { notificationListener } from './utils/midtrans.js';
+import config from './config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export default async () => {
+export default () => {
     try {
         const app = express();
         app.use(cors({ origin: '*' }));
@@ -20,7 +20,6 @@ export default async () => {
         // Specify the storage configuration
         // const multerStorage = multer.memoryStorage();
         // const upload = multer({ storage: multerStorage }).array('files', 5);
-
         app.use((req, res, next) => {
             if (req.is('multipart/form-data')) {
                 const bb = busboy({ headers: req.headers });

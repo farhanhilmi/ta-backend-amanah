@@ -53,4 +53,17 @@ export class LoansController {
             next(error);
         }
     }
+
+    async getLoanRecommendation(req, res, next) {
+        try {
+            // const { page, limit, sort, order } = req.query;
+            const data = await this.loanService.getLoanRecommendation(
+                req.user.userId,
+            );
+            // io.emit(`notification#${userId}`, data);
+            res.status(200).json(responseData(data, 'OK', 'success', {}));
+        } catch (error) {
+            next(error);
+        }
+    }
 }

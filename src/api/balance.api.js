@@ -131,4 +131,19 @@ export default class BorrowerController {
             next(error);
         }
     }
+
+    async getTransactionHistory(req, res, next) {
+        try {
+            const { userId } = req.user;
+            const data = await this.balanceService.getTransactionHistory(
+                userId,
+                req.query,
+            );
+            res.status(200).json(
+                responseData(data.data, true, 'Success get data', data.meta),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
 }

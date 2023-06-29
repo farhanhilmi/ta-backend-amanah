@@ -14,17 +14,21 @@ import {
     toObjectId,
     validateRequestPayload,
 } from '../utils/index.js';
-import {
-    createTransaction,
-    createTransactionCore,
-    validateBankAccount,
-} from '../utils/midtrans.js';
+// import {
+//     createTransaction,
+//     createTransactionCore,
+//     validateBankAccount,
+// } from '../utils/midtrans.js';
 import transactionModels from '../database/models/transaction.models.js';
 import {
     createDisbursement,
     createPaymentIn,
     getBankInfo,
 } from '../utils/flip.js';
+import {
+    formatDataPagination,
+    returnDataPagination,
+} from '../utils/responses.js';
 
 export default class BalanceService {
     constructor() {
@@ -155,6 +159,91 @@ export default class BalanceService {
         }
     }
 
+    async getTransactionHistory(userId, params) {
+        try {
+            let { page, limit, sort, order, type, status } = params;
+
+            page = parseInt(page) || 1;
+            limit = parseInt(limit) || 10;
+            sort = sort || 'createdDate';
+            order = order || 'desc';
+            const sortOrder = order === 'asc' ? 1 : -1;
+
+            let queryFilter = {};
+
+            if (type) {
+                queryFilter.type = { $regex: type, $options: 'i' };
+            }
+            if (status) {
+                queryFilter.status = { $regex: status, $options: 'i' };
+            }
+
+            const user = await this.userModel.exists({ _id: userId });
+            if (!user) {
+                throw new NotFoundError('User not found');
+            }
+            const transactions = await this.transactionModel
+                .aggregate(
+                    [
+                        {
+                            $match: {
+                                userId: toObjectId(userId),
+                                ...queryFilter,
+                            },
+                        },
+                        {
+                            $project: {
+                                transactionId: 1,
+                                type: 1,
+                                amount: 1,
+                                status: 1,
+                                paymentLink: 1,
+                                _id: 0,
+                                createdDate: 1,
+                            },
+                        },
+                        {
+                            $sort: { [sort]: sortOrder },
+                        },
+                        {
+                            $skip: limit * page - limit,
+                        },
+                        {
+                            $limit: limit,
+                        },
+                    ],
+
+                    // {
+                    //     transactionId: 1,
+                    //     type: 1,
+                    //     amount: 1,
+                    //     status: 1,
+                    //     _id: 0,
+                    //     createdDate: 1,
+                    // },
+                )
+                .exec();
+
+            const totalItems = await this.transactionModel.countDocuments({
+                userId: toObjectId(userId),
+                ...queryFilter,
+            });
+
+            // return transactions;c
+            console.log('transactions', transactions);
+            return returnDataPagination(
+                transactions,
+                totalItems,
+                {
+                    ...params,
+                },
+                'balance/transaction/history',
+            );
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async getBankAccount(userId) {
         try {
             const user = await this.userModel.exists({ _id: userId });
@@ -182,9 +271,9 @@ export default class BalanceService {
                 );
             }
 
-            const account = await validateBankAccount(bank, number);
-            console.log('account', account);
-            return account;
+            // const account = await validateBankAccount(bank, number);
+            // console.log('account', account);
+            // return account;
         } catch (error) {
             throw error;
         }

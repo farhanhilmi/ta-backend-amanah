@@ -140,7 +140,7 @@ export default class LenderService {
             const result = await this.lenderRepository.getLenderPortfolio(
                 userId,
             );
-            console.log('result', JSON.stringify(result, null, 2));
+            // console.log('result', JSON.stringify(result, null, 2));
             const formattedResult = {
                 active: {
                     summary: {
@@ -270,19 +270,19 @@ export default class LenderService {
                 loanId: payload.loanId,
             });
             if (funding) {
-                throw new ValidationError(
+                throw new DataConflictError(
                     'You already funded this loan request',
                 );
             }
 
-            const { balance } = await this.balanceModel.findOne(
+            const balance = await this.balanceModel.findOne(
                 {
                     userId: user.userId,
                 },
-                { balance: 1, _id: 0 },
+                { amount: 1, _id: 0 },
             );
 
-            if (payload.amount > balance) {
+            if (payload.amount > balance.amount) {
                 throw new InsufficientError(
                     "You don't have enough balance to fund this loan request. Please top up your balance before funding this loan request.",
                 );
@@ -393,16 +393,40 @@ export default class LenderService {
                 loan.status = 'on process';
             }
 
-            // Create signature for the loan lender
-            const contractLink = await lenderSignature({
-                loanId: loan._id.toString(),
-                userId: user.userId,
-                lenderId: lender._id.toString(),
-                borrowerId: loan.borrowerId,
-            });
+            // Update balance for lender and borrower
+            const [unused1, unused2, contractLink] = await Promise.allSettled([
+                this.balanceModel.findOneAndUpdate(
+                    {
+                        userId: user.userId,
+                    },
+                    {
+                        $inc: {
+                            balance: -payload.amount,
+                        },
+                    },
+                ),
+                this.balanceModel.findOneAndUpdate(
+                    {
+                        userId: loan.userId,
+                    },
+                    {
+                        $inc: {
+                            balance: payload.amount,
+                        },
+                    },
+                ),
+                lenderSignature({
+                    loanId: loan._id.toString(),
+                    userId: user.userId,
+                    lenderId: lender._id.toString(),
+                    borrowerId: loan.borrowerId,
+                }),
+            ]);
+            console.log('unused1', unused1);
+            console.log('unused2', unused2);
 
             loan.save();
-            return contractLink;
+            return contractLink.value;
             // const loanthis.loanModel.findOneAndUpdate({_id: payload.loanId}, {status: 'in borrowing'})
         } catch (error) {
             throw error;

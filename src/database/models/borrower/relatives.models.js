@@ -14,7 +14,7 @@ const relativesOptions = {
         default: false,
     },
     phoneNumber: {
-        type: Number,
+        type: String,
         required: 'Phone Number is required!',
         default: false,
     },

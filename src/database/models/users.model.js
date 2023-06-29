@@ -20,7 +20,7 @@ const schema = new mongoose.Schema(
             unique: true,
         },
         phoneNumber: {
-            type: Number,
+            type: String,
             required: 'Phone Number is required!',
         },
         password: {

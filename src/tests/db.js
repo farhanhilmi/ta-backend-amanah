@@ -32,6 +32,7 @@ const connect = async () => {
 
         const mongoUri = await mongoServer.getUri();
         await mongoose.connect(mongoUri, opts);
+        // console.log('mongoUri', mongoUri);
     } catch (error) {
         console.log('ERORR', error);
     }

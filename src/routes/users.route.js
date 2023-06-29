@@ -8,6 +8,7 @@ const Routes = () => {
 
     // * START: USERS or AUTH ROUTES
     const userController = new UsersController();
+
     router.post('/register', userController.register.bind(userController));
     router.post('/login', userController.login.bind(userController));
     router.post(

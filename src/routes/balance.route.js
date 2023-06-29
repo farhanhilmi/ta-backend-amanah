@@ -86,6 +86,14 @@ const Routes = () => {
         controller.inquireBankAccount.bind(controller),
     );
 
+    router.get(
+        '/transaction/history',
+        authenticateToken,
+        // isLender,
+        // isKYCVerified,
+        controller.getTransactionHistory.bind(controller),
+    );
+
     router.put(
         '/account',
         authenticateToken,

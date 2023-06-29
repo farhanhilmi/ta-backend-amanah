@@ -7,7 +7,9 @@ import { RequestError, ValidationError } from './errorHandler.js';
 import { v4 as uuidV4 } from 'uuid';
 
 export function isAccountIncluded(dataList, value) {
-    return dataList.some((item) => item.accountNumber === value);
+    return dataList.some(
+        (item) => parseInt(item.accountNumber) === parseInt(value),
+    );
 }
 
 export const generateUUID = () => {

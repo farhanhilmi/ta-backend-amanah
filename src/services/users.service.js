@@ -130,7 +130,6 @@ export default class Users {
                     'userId is not valid!. Please check again',
                 );
             }
-
             const user = await this.usersRepo.findById(userId);
             if (!user) {
                 throw new CredentialsError(

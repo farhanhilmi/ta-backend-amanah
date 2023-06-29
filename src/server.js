@@ -6,7 +6,7 @@ import expressApp from './app.js';
 
 const startServer = async () => {
     try {
-        const app = await expressApp();
+        const app = expressApp();
 
         app.listen(config.app.port, () => {
             console.log(

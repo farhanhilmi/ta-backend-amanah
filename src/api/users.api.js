@@ -7,8 +7,7 @@ import {
 
 // import userServices from '../services/index.js';
 export default class UsersController {
-    constructor(channel) {
-        this.channel = channel;
+    constructor() {
         this.usersService = new UserService();
     }
 
@@ -29,8 +28,11 @@ export default class UsersController {
 
     async register(req, res, next) {
         try {
+            console.log('DEDJIEJDIEDJEIDJI');
+
+            console.log('register');
             const data = await this.usersService.createUser(req.body);
-            // const data = await this.usersService.createAccount(req.body);
+            // // const data = await this.usersService.createAccount(req.body);
             res.status(201).json({
                 status: true,
                 message:

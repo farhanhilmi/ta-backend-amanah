@@ -1,0 +1,36 @@
+export default [
+    {
+        _id: '6492956222af6dc83b52971a',
+        userId: '64880da9cf0c2cf9d2a00060',
+        companyName: null,
+        position: null,
+        salary: null,
+        joinDate: null,
+        companyPhoneNumber: null,
+        address: {
+            province: null,
+            city: null,
+            postalCode: null,
+            detail: null,
+        },
+        createdDate: '1687328098781',
+        modifyDate: '1687328098781',
+    },
+    {
+        _id: '6492956222af6dc83b52970a',
+        userId: '6445fd1319df4e1b0146d8b7',
+        companyName: null,
+        position: null,
+        salary: null,
+        joinDate: null,
+        companyPhoneNumber: null,
+        address: {
+            province: null,
+            city: null,
+            postalCode: null,
+            detail: null,
+        },
+        createdDate: '1687328098781',
+        modifyDate: '1687328098781',
+    },
+];
