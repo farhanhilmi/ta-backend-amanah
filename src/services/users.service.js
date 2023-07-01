@@ -32,6 +32,7 @@ import createBorrower from './users/createBorrower.js';
 import createLender from './lender/createLender.js';
 import checkKYCStatus from './users/checkKYCStatus.js';
 import createBalance from './users/createBalance.js';
+import AdminService from './admin.service.js';
 
 export default class Users {
     constructor() {
@@ -41,6 +42,7 @@ export default class Users {
         this.refreshTokenRepo = new RefreshTokenRepository();
         this.forgetTokenModel = forgetToken;
         this.lender;
+        this.adminService = new AdminService();
     }
 
     async checkKYCStatus(userId, roles) {
@@ -183,6 +185,11 @@ export default class Users {
 
     async login(payload, action = false) {
         try {
+            // If action is admin, then redirect to admin login
+            if (action && action.toLowerCase() === 'admin') {
+                return await this.adminService.login(payload);
+            }
+
             if (action !== 'login') {
                 if (
                     !Object.hasOwn(payload, 'email') ||

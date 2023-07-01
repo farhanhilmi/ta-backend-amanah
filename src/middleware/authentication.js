@@ -31,6 +31,17 @@ export const authenticateToken = (req, res, next) => {
     return next();
 };
 
+export const isAdmin = (req, res, next) => {
+    const { roles } = req.user;
+
+    if (roles.toLowerCase() != 'admin') {
+        throw new AuthorizeError(
+            'Your account has no access to these resources',
+        );
+    }
+    return next();
+};
+
 export const isLender = (req, res, next) => {
     const { roles } = req.user;
 

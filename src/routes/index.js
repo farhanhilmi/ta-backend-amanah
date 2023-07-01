@@ -3,6 +3,7 @@ import borrowerRoutes from './borrowers.route.js';
 import lendersRoutes from './lenders.route.js';
 import loansRoutes from './loans.route.js';
 import balanceRoutes from './balance.route.js';
+import adminRoutes from './admin.route.js';
 // import transactionIn from '../services/flipWebhook/transactionIn.js';
 import {
     inquiryBankAccount,
@@ -16,6 +17,7 @@ const Routes = (app) => {
     app.use('/api/lenders', lendersRoutes());
     app.use('/api/loans', loansRoutes());
     app.use('/api/balance', balanceRoutes());
+    app.use('/api/admin', adminRoutes());
 
     // webhook
     app.post('/flip/transaction/in', transactionIn);
