@@ -37,6 +37,11 @@ export default class BorrowerService {
         try {
             payload = await transformNestedObject(payload);
 
+            const { personal, relativesContact } = payload;
+
+            // it will throw an error if there is a missing field
+            validateVerifyBorrowerRequest(payload, personal, relativesContact);
+
             const user = await this.userModel.findOne({
                 _id: toObjectId(userId),
             });
@@ -61,11 +66,6 @@ export default class BorrowerService {
             if (!user.roles.includes('borrower')) {
                 throw new AuthorizeError('User is not a borrower!');
             }
-
-            const { personal, relativesContact } = payload;
-
-            // it will throw an error if there is a missing field
-            validateVerifyBorrowerRequest(payload, personal, relativesContact);
 
             const relatives = {
                 firstRelative: {

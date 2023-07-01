@@ -21,4 +21,44 @@ export default [
         createdDate: '2023-06-13T06:16:23.573+00:00',
         modifyDate: '2023-06-13T06:16:23.573+00:00',
     },
+    {
+        _id: '64880a090e51f774902f165c',
+        userId: toObjectId('649fa6d7666b2f32b476f848'),
+        loanLimit: null,
+        income: null,
+        status: 'verified',
+        performance: {
+            borrowingRecord: {
+                borrowedFund: 0,
+                totalBorrowing: 0,
+            },
+            repayment: {
+                earlier: 0,
+                onTime: 0,
+                late: 0,
+            },
+        },
+        createdDate: '2023-06-13T06:16:23.573+00:00',
+        modifyDate: '2023-06-13T06:16:23.573+00:00',
+    },
+    {
+        _id: '64880a090e51f774902f168c',
+        userId: toObjectId('649fada43016797da5147e94'),
+        loanLimit: null,
+        income: null,
+        status: 'not verified',
+        performance: {
+            borrowingRecord: {
+                borrowedFund: 0,
+                totalBorrowing: 0,
+            },
+            repayment: {
+                earlier: 0,
+                onTime: 0,
+                late: 0,
+            },
+        },
+        createdDate: '2023-06-13T06:16:23.573+00:00',
+        modifyDate: '2023-06-13T06:16:23.573+00:00',
+    },
 ];

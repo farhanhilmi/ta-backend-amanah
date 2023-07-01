@@ -41,6 +41,19 @@ describe('Loans ~ Positive Case', () => {
         expect(response.status).toBe(200);
         expect(response.data.data.borrowingCategory).toBe('Pendidikan');
     });
+
+    test('GET /loans/available/recommended should return recommended loans', async () => {
+        const response = await axios.get(
+            `${baseUrl}/api/loans/available/recommended`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessTokenRichBalance}`,
+                },
+            },
+        );
+        expect(response.status).toBe(200);
+        expect(response.data).toHaveProperty('data');
+    });
 });
 
 describe('Loans ~ Negatif Case', () => {
@@ -56,6 +69,14 @@ describe('Loans ~ Negatif Case', () => {
             );
         } catch (error) {
             expect(error.response.status).toBe(404);
+        }
+    });
+
+    test('GET /loans/available/recommended should return 403 not login', async () => {
+        try {
+            await axios.get(`${baseUrl}/api/loans/available/recommended`, {});
+        } catch (error) {
+            expect(error.response.status).toBe(403);
         }
     });
 });

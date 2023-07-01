@@ -47,4 +47,36 @@ export default [
         createdDate: '2023-06-13T06:16:23.573+00:00',
         modifyDate: '2023-06-13T06:16:23.573+00:00',
     },
+    {
+        _id: '649bc6054b8a7df3a3a7e198',
+        userId: '649fa6d7666b2f32b476f848',
+        amount: 0,
+        account: [
+            {
+                bankName: 'Bank Rakyat Indonesia',
+                bankCode: 'bri',
+                accountNumber: '55555677788',
+                _id: '649a7436fc4df3cfdc0558b8',
+            },
+        ],
+        virtualAccount: [],
+        createdDate: '2023-06-13T06:16:23.573+00:00',
+        modifyDate: '2023-06-13T06:16:23.573+00:00',
+    },
+    {
+        _id: '649bc6054b8a7df3a3a7e196',
+        userId: '649fada43016797da5147e94',
+        amount: 0,
+        account: [
+            {
+                bankName: 'Bank Rakyat Indonesia',
+                bankCode: 'bri',
+                accountNumber: '55555677788',
+                _id: '649a7436fc4df3cfdc0558b8',
+            },
+        ],
+        virtualAccount: [],
+        createdDate: '2023-06-13T06:16:23.573+00:00',
+        modifyDate: '2023-06-13T06:16:23.573+00:00',
+    },
 ];
