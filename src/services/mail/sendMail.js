@@ -3,7 +3,11 @@ import bcrypt from 'bcrypt';
 import fs from 'fs';
 import config from '../../config/index.js';
 import verifyToken from '../../database/models/verifyToken.model.js';
-import { sendMailOTP, sendMailVerification } from '../../utils/mail/index.js';
+import {
+    sendMailLoanFunded,
+    sendMailOTP,
+    sendMailVerification,
+} from '../../utils/mail/index.js';
 import Users from '../../database/models/users.model.js';
 import {
     DataConflictError,
@@ -11,6 +15,15 @@ import {
     ValidationError,
 } from '../../utils/errorHandler.js';
 import OTPRepository from '../../database/repository/otp.repository.js';
+
+export const sendLoanFullyFunded = async (
+    borrower,
+    loan,
+    dashboardLink,
+    contractLink,
+) => {
+    await sendMailLoanFunded(borrower, loan, dashboardLink, contractLink);
+};
 
 export const resendVerifyAccount = async (userId) => {
     try {

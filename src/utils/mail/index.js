@@ -7,6 +7,7 @@ import {
     addMinutesToDate,
     generateRandomCode,
     dateFormatter,
+    formatRupiah,
 } from '../index.js';
 
 /**
@@ -95,6 +96,37 @@ export const sendMailVerification = async (email, subject, link) => {
 
     const template = fs.readFileSync(
         './src/utils/mail/template/verifyAccountLink.html',
+        'utf8',
+    );
+
+    await sendMail(dataMail, template);
+    console.log('MASOOKK');
+    return true;
+};
+
+export const sendMailLoanFunded = async (
+    borrower,
+    loan,
+    dashboardLink,
+    contractLink,
+) => {
+    // console.log('loan', loan);
+    const dataMail = {
+        recipient: borrower.email,
+        name: borrower.name,
+        loanAmount: formatRupiah(loan.amount),
+        loanYield: formatRupiah(loan.yieldReturn),
+        loanSchema: loan.paymentSchema,
+        loanTenor: loan.tenor,
+        dashboardLink,
+        contractLink,
+        subject: `Your Loan Has Been Funded [P2P Lending Syariah]`,
+    };
+
+    // console.log('dataMail', dataMail);
+
+    const template = fs.readFileSync(
+        './src/utils/mail/template/borrowerLoanFull.html',
         'utf8',
     );
 

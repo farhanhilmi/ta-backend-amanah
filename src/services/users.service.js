@@ -247,9 +247,7 @@ export default class Users {
                 'password',
             ]);
             if (errors) {
-                throw new ValidationError(
-                    `${errorFields} field(s) is required!`,
-                );
+                throw new ValidationError(`${errors} field(s) is required!`);
             }
 
             if (!(await verifyPassword(password, user.password, user.salt))) {

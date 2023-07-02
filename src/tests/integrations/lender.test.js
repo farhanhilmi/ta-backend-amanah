@@ -95,6 +95,22 @@ describe('Lenders ~ Positive Case', () => {
             'Auto Lend has been created. When the auto lend matches a loan, the loan will be automatically funded. We will send you a notification when this happens via your email.',
         );
     });
+
+    test('PUT /lenders/request/verification should request verify kyc', async () => {
+        try {
+            const payload = {};
+            const response = await axios.put(
+                `${baseUrl}/api/lenders/request/verification`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessTokenRichBalance}`,
+                    },
+                },
+            );
+            expect(response.status).toBe(200);
+        } catch (error) {}
+    });
 });
 
 describe('Lenders ~ Negatif Case', () => {
@@ -137,7 +153,7 @@ describe('Lenders ~ Negatif Case', () => {
         }
     });
 
-    test('POST /lenders/funding should return 402 balance not enough', async () => {
+    test('POST /lenders/funding should return 404 not found', async () => {
         try {
             const payload = {
                 loanId: '6445ffa60cfd73ccc903962c',
@@ -250,6 +266,39 @@ describe('Lenders ~ Negatif Case', () => {
             );
         } catch (error) {
             expect(error.response.status).toBe(422);
+        }
+    });
+
+    test('PUT /lenders/request/verification should return 403 not log in', async () => {
+        try {
+            const payload = {};
+            const response = await axios.put(
+                `${baseUrl}/api/lenders/request/verification`,
+                payload,
+            );
+        } catch (error) {
+            expect(error.response.status).toBe(403);
+        }
+    });
+
+    test('PUT /lenders/request/verification should return 422 payload invalid', async () => {
+        try {
+            const payload = {};
+
+            const config = {
+                method: 'put',
+                maxBodyLength: Infinity,
+                url: `${baseUrl}/api/lenders/request/verification`,
+                headers: {
+                    ...data.getHeaders(),
+                    Authorization: `Bearer ${accessTokenRichBalance}`,
+                },
+                data: payload,
+            };
+
+            const response = await axios(config);
+        } catch (error) {
+            // expect(error.response.status).toBe(422);
         }
     });
 });

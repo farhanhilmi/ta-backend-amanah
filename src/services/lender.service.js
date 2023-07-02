@@ -28,6 +28,8 @@ import lenderContractModels from '../database/models/loan/lenderContract.models.
 import lenderSignature from '../utils/lenderSignature.js';
 import LenderRepository from '../database/repository/lender.repository.js';
 import balanceModel from '../database/models/balance.model.js';
+import { sendLoanFullyFunded } from './mail/sendMail.js';
+import borrowerContractModels from '../database/models/loan/borrowerContract.models.js';
 
 export default class LenderService {
     constructor() {
@@ -40,6 +42,7 @@ export default class LenderService {
         this.workModel = workModels;
         this.autoLendModel = autoLendModels;
         this.lenderContract = lenderContractModels;
+        this.borrowerContract = borrowerContractModels;
         this.lenderRepository = new LenderRepository();
         this.balanceModel = balanceModel;
     }
@@ -389,6 +392,31 @@ export default class LenderService {
                     loanId: loan._id,
                     paymentSchedule,
                 });
+
+                const [borrowerContract, borrowerUser] =
+                    await Promise.allSettled([
+                        this.borrowerContract.findOne(
+                            { loanId: loan._id },
+                            { contractLink: 1, _id: 0 },
+                        ),
+                        this.userModel.findOne(
+                            { _id: loan.userId },
+                            { name: 1, email: 1, _id: 0 },
+                        ),
+                    ]);
+                const dashboardLink = 'https://amanahsyariah.vercel.app/lender';
+                // console.log('borrowerUser', borrowerUser);
+                const borrower = {
+                    name: borrowerUser.value.name,
+                    email: borrowerUser.value.email,
+                };
+                // console.log('contractLink', borrowerContract.value);
+                sendLoanFullyFunded(
+                    borrower,
+                    loan,
+                    dashboardLink,
+                    borrowerContract.value.contractLink,
+                );
             } else {
                 loan.status = 'on process';
             }
@@ -401,7 +429,7 @@ export default class LenderService {
                     },
                     {
                         $inc: {
-                            balance: -payload.amount,
+                            amount: -parseInt(payload.amount),
                         },
                     },
                 ),
@@ -411,7 +439,7 @@ export default class LenderService {
                     },
                     {
                         $inc: {
-                            balance: payload.amount,
+                            amount: parseInt(payload.amount),
                         },
                     },
                 ),
@@ -422,8 +450,8 @@ export default class LenderService {
                     borrowerId: loan.borrowerId,
                 }),
             ]);
-            console.log('unused1', unused1);
-            console.log('unused2', unused2);
+            // console.log('unused1', unused1.value);
+            // console.log('unused2', unused2.value);
 
             loan.save();
             return contractLink.value;
