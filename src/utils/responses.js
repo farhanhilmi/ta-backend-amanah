@@ -13,15 +13,68 @@ export const formatData = (data) => {
 
 export const responseData = (
     data = [],
-    status = 'OK',
+    status = true,
     message = 'success',
     meta = {},
 ) => {
     return {
-        status,
+        success: status,
         message,
         data,
         meta,
+    };
+};
+
+export const returnDataPagination = (
+    data,
+    // page,
+    // limit,
+    totalItems,
+    // sort = null,
+    // order = null,
+    params = {},
+    path,
+) => {
+    const page = parseInt(params.page) || 1;
+    const limit = parseInt(params.limit) || 10;
+
+    const URL = `${config.PROJECT_URL}/${path}`;
+    const isNextPage = totalItems > page * limit;
+    const isPreviousPage = page > 1;
+
+    const paginationURL = (pageNumber) => {
+        // iterate params
+        let queryParamsFilter = '';
+        for (let key in params) {
+            queryParamsFilter += `&${key}=${params[key]}`;
+            // console.log(key, params[key]);
+        }
+        // if (sort && order) {
+        //     return `${URL}?page=${pageNumber}&limit=${limit}&sort=${sort}&order=${order}${queryParamsFilter}`;
+        // }
+        return `${URL}?page=${pageNumber}&limit=${limit}${queryParamsFilter}`;
+        // query = query ? `&q=${query.trim().replace(/\s/g, '+')}` : '';
+        // console.log('QUERY', query);
+        // if (sort && order) {
+        //     return `${URL}?page=${pageNumber}&limit=${limit}&sort=${sort}&order=${order}${query}`;
+        // }
+        // return `${URL}?page=${pageNumber}&limit=${limit}${query}`;
+    };
+
+    return {
+        data,
+        meta: {
+            pagination: {
+                currentPage: page,
+                nextPage: isNextPage ? `${paginationURL(page + 1)}` : null,
+                previousPage: isPreviousPage
+                    ? `${paginationURL(page - 1)}`
+                    : null,
+                totalPages: Math.ceil(totalItems / limit),
+                limit: limit,
+            },
+            totalItems,
+        },
     };
 };
 
@@ -37,8 +90,9 @@ export const formatDataPagination = (
     tenor_max = null,
     yield_min = null,
     yield_max = null,
+    path = null,
 ) => {
-    const URL = `${config.PROJECT_URL}`;
+    const URL = `${config.PROJECT_URL}/${path}`;
     const isNextPage = totalItems > page * limit;
     const isPreviousPage = page > 1;
 

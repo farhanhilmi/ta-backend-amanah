@@ -1,15 +1,17 @@
-// {
-//     "presets": ["@babel/preset-env"],
-//     "plugins": [
-//         [
-//             "@babel/plugin-transform-modules-commonjs",
-//             {
-//                 "allowTopLevelThis": true
-//             }
-//         ]
-//     ]
-// }
-
 {
-    "presets": ["@babel/preset-env"]
+    "presets": [["@babel/preset-env", { "targets": { "node": "current" } }]],
+    "plugins": ["@babel/plugin-syntax-import-meta"]
 }
+
+// module.exports = {
+//     presets: [
+//         [
+//             '@babel/preset-env',
+//             {
+//                 targets: {
+//                     node: 'current',
+//                 },
+//             },
+//         ],
+//     ],
+// };
