@@ -157,6 +157,12 @@ export default class LoanRepository {
                                                 'on process',
                                             ],
                                         },
+                                        {
+                                            $eq: [
+                                                '$$loan.status',
+                                                'in borrowing',
+                                            ],
+                                        },
                                     ],
                                 },
                             },
@@ -168,12 +174,12 @@ export default class LoanRepository {
                                 as: 'loan',
                                 cond: {
                                     $or: [
-                                        {
-                                            $eq: [
-                                                '$$loan.status',
-                                                'in borrowing',
-                                            ],
-                                        },
+                                        // {
+                                        //     $eq: [
+                                        //         '$$loan.status',
+                                        //         'in borrowing',
+                                        //     ],
+                                        // },
                                         {
                                             $eq: ['$$loan.status', 'repayment'],
                                         },
