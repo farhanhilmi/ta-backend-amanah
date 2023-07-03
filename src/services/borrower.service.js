@@ -337,33 +337,109 @@ export default class BorrowerService {
                             {
                                 'loan.userId': toObjectId(userId),
                             },
-                            { 'paymentSchedule.status': 'unpaid' },
+                            // { 'paymentSchedule.status': 'unpaid' },
                         ],
                     },
                 },
                 {
                     $addFields: {
                         paymentSchedule: {
-                            $map: {
-                                input: '$paymentSchedule',
-                                as: 'item',
-                                in: {
-                                    amount: '$$item.amount',
-                                    status: '$$item.status',
-                                    date: {
-                                        $dateToString: {
-                                            date: '$$item.date',
-                                            timezone: 'Asia/Jakarta',
-                                            format: '%Y-%m-%d %H:%M',
+                            $filter: {
+                                input: {
+                                    $map: {
+                                        input: '$paymentSchedule',
+                                        as: 'item',
+                                        in: {
+                                            $cond: [
+                                                {
+                                                    $in: [
+                                                        '$$item.status',
+                                                        [
+                                                            'repayment',
+                                                            'late repayment',
+                                                        ],
+                                                    ],
+                                                },
+                                                {
+                                                    amount: '$$item.amount',
+                                                    status: '$$item.status',
+                                                    date: {
+                                                        $dateToString: {
+                                                            date: '$$item.date',
+                                                            timezone:
+                                                                'Asia/Jakarta',
+                                                            format: '%Y-%m-%d %H:%M',
+                                                        },
+                                                    },
+                                                },
+                                                null,
+                                            ],
                                         },
                                     },
                                 },
+                                as: 'item',
+                                cond: { $ne: ['$$item', null] },
                             },
-                            // $dateToString: {
-                            //     date: '$paymentSchedule.date',
-                            //     timezone: 'Asia/Jakarta',
-                            //     format: '%d-%m-%Y %H:%M',
-                            // },
+                        },
+                        currentMonth: {
+                            $cond: [
+                                {
+                                    $anyElementTrue: {
+                                        $map: {
+                                            input: '$paymentSchedule',
+                                            as: 'item',
+                                            in: {
+                                                $eq: [
+                                                    '$$item.status',
+                                                    'unpaid',
+                                                ],
+                                            },
+                                        },
+                                    },
+                                },
+                                // {
+                                //     $arrayElemAt: [
+                                //         {
+                                //             $filter: {
+                                //                 input: '$paymentSchedule',
+                                //                 as: 'item',
+                                //                 cond: {
+                                //                     $eq: [
+                                //                         '$$item.status',
+                                //                         'unpaid',
+                                //                     ],
+                                //                 },
+                                //             },
+                                //         },
+                                //         0,
+                                //     ],
+                                // },
+                                {
+                                    $let: {
+                                        vars: {
+                                            unpaidItem: {
+                                                $arrayElemAt: [
+                                                    {
+                                                        $filter: {
+                                                            input: '$paymentSchedule',
+                                                            as: 'item',
+                                                            cond: {
+                                                                $eq: [
+                                                                    '$$item.status',
+                                                                    'unpaid',
+                                                                ],
+                                                            },
+                                                        },
+                                                    },
+                                                    0,
+                                                ],
+                                            },
+                                        },
+                                        in: '$$unpaidItem.amount',
+                                    },
+                                },
+                                {},
+                            ],
                         },
                     },
                 },
@@ -371,6 +447,7 @@ export default class BorrowerService {
                     $project: {
                         _id: 0,
                         loan: 0,
+                        loanId: 0,
                         userId: 0,
                         createdDate: 0,
                         modifyDate: 0,
@@ -378,7 +455,8 @@ export default class BorrowerService {
                     },
                 },
             ]);
-            // console.log('loans', loans[0]);
+
+            // console.log('loans', loans);
             return loans[0];
         } catch (error) {
             throw error;
