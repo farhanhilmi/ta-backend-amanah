@@ -1,4 +1,5 @@
 import balanceModel from '../../database/models/balance.model.js';
+import loansModels from '../../database/models/loan/loans.models.js';
 import transactionModels from '../../database/models/transaction.models.js';
 
 export default async (req, res, next) => {
@@ -29,6 +30,17 @@ export default async (req, res, next) => {
                 const userId = parsedData.idempotency_key.split('-')[0];
                 const amount = parsedData.amount;
                 const transactionTime = parsedData.time_served;
+
+                if (parsedData.remark === 'Disbursement') {
+                    await loansModels.findOneAndUpdate(
+                        {
+                            userId,
+                        },
+                        {
+                            status: 'disbursement',
+                        },
+                    );
+                }
 
                 await Promise.allSettled([
                     transactionModels.findOneAndUpdate(

@@ -27,6 +27,7 @@ export const createDisbursement = async (data) => {
         // console.log('result', result.data);
         return result.data;
     } catch (error) {
+        // console.log('error', error);
         throw error;
     }
 };

@@ -93,7 +93,7 @@ export default class LoanRepository {
                                 loanId: '$_id',
                                 tenor: '$tenor',
                                 amount: '$amount',
-                                date: '2020-02-02',
+                                date: '$createdDate',
                                 status: '$status',
                                 totalFund: {
                                     $toInt: {
@@ -115,7 +115,7 @@ export default class LoanRepository {
                             $push: {
                                 loanId: '$_id',
                                 tenor: '$tenor',
-                                date: '2020-02-02',
+                                date: '$createdDate',
                                 yieldReturn: '$yieldReturn',
                                 amount: '$amount',
                                 tenor: '$tenor',
@@ -161,6 +161,12 @@ export default class LoanRepository {
                                             $eq: [
                                                 '$$loan.status',
                                                 'in borrowing',
+                                            ],
+                                        },
+                                        {
+                                            $eq: [
+                                                '$$loan.status',
+                                                'disbursement',
                                             ],
                                         },
                                     ],

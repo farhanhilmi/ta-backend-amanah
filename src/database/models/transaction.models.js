@@ -28,7 +28,7 @@ const statusOptions = {
 
 const typeOptions = {
     type: String,
-    enum: ['Withdraw', 'Deposit', 'Repayment'].concat([null]),
+    enum: ['Withdraw', 'Deposit', 'Disbursement', 'Repayment'].concat([null]),
     // default: null,
 };
 
@@ -40,6 +40,10 @@ const schema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Users',
             required: true,
+        },
+        repaymentId: {
+            type: String,
+            default: null,
         },
         transactionId: {
             type: String,

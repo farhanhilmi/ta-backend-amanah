@@ -1,5 +1,8 @@
 import balanceModel from '../../database/models/balance.model.js';
+import loansModels from '../../database/models/loan/loans.models.js';
+import paymentModels from '../../database/models/loan/payment.models.js';
 import transactionModels from '../../database/models/transaction.models.js';
+import { toObjectId } from '../../utils/index.js';
 
 export default async (req, res, next) => {
     try {
@@ -54,10 +57,61 @@ export default async (req, res, next) => {
 
                         if (transactionType === 'Repayment') {
                             console.log('Repayment');
-                            await balanceModel.findOneAndUpdate(
-                                { userId: user.userId },
-                                { $inc: { amount: -amount } },
+                            const loanId = user.repaymentId.split('-')[0];
+                            const repaymentId = user.repaymentId.split('-')[1];
+                            const payment = await paymentModels.findOne(
+                                { loanId },
+                                { paymentSchedule: 1, _id: 0 },
                             );
+
+                            const paymentSchedule =
+                                payment.paymentSchedule.filter(
+                                    (item) =>
+                                        item._id.toString() === repaymentId,
+                                );
+
+                            if (paymentSchedule.length === 0) {
+                                console.log(
+                                    'paymentSchedule zero',
+                                    paymentSchedule,
+                                );
+                                break;
+                            }
+
+                            let repaymentStatus = '';
+                            let paidStatus = '';
+                            if (paymentSchedule[0].date < new Date()) {
+                                repaymentStatus = 'late repayment';
+                                paidStatus = 'late paid';
+                            } else {
+                                paidStatus = 'paid';
+                                repaymentStatus = 'repayment';
+                            }
+
+                            await Promise.allSettled([
+                                loansModels.findOneAndUpdate(
+                                    {
+                                        _id: loanId,
+                                    },
+                                    {
+                                        status: repaymentStatus,
+                                    },
+                                ),
+                                paymentModels.findOneAndUpdate(
+                                    {
+                                        loanId,
+                                        'paymentSchedule._id':
+                                            toObjectId(repaymentId),
+                                    },
+                                    {
+                                        $set: {
+                                            'paymentSchedule.$.status':
+                                                paidStatus,
+                                        },
+                                    },
+                                ),
+                            ]);
+
                             user.status = 'done';
                             await user.save();
 

@@ -12,12 +12,9 @@ export default class BorrowerController {
 
     async getProfile(req, res, next) {
         try {
-            const { userId, roles } = req.user;
+            const { userId } = req.user;
             // const { userId, roles } = JSON.parse(req.header('user'));
-            const data = await this.borrowerService.getBorrowerProfile({
-                userId,
-                roles,
-            });
+            const data = await this.borrowerService.getBorrowerProfile(userId);
             res.status(200).json(responseData(data));
         } catch (error) {
             next(error);
@@ -87,6 +84,33 @@ export default class BorrowerController {
         }
     }
 
+    async getFundDisbursement(req, res, next) {
+        try {
+            const { userId } = req.user;
+
+            const data = await this.borrowerService.getFundDisbursement(userId);
+
+            res.status(200).json(responseData(data, true, 'Successfully!'));
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async postFundDisbursement(req, res, next) {
+        try {
+            const { userId } = req.user;
+
+            const data = await this.borrowerService.postFundDisbursement(
+                userId,
+                req.body,
+            );
+
+            res.status(200).json(responseData(data, true, 'Successfully!'));
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async getPaymentSchedule(req, res, next) {
         try {
             const { userId } = req.user;
@@ -96,6 +120,21 @@ export default class BorrowerController {
             res.status(200).json(
                 responseData(data, true, 'Successfully get payment schedule'),
             );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async postRepayment(req, res, next) {
+        try {
+            const { userId } = req.user;
+
+            const data = await this.borrowerService.postRepayment(
+                userId,
+                req.body,
+            );
+
+            res.status(200).json(responseData(data, true, 'Successfully'));
         } catch (error) {
             next(error);
         }

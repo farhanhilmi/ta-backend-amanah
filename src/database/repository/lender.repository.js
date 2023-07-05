@@ -67,6 +67,7 @@ export default class LenderRepository {
                                             'on process',
                                             'on request',
                                             'in borrowing',
+                                            'disbursement',
                                             'unpaid',
                                         ],
                                     ],

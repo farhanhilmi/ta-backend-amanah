@@ -8,6 +8,7 @@ const loanStatus = {
             $or: [
                 { $eq: ['$status', 'on request'] },
                 { $eq: ['$status', 'on process'] },
+                // { $eq: ['$status', 'disbursement'] },
             ],
         },
         then: 'tersedia',

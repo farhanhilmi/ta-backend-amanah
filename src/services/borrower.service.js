@@ -4,6 +4,7 @@ import workModels from '../database/models/borrower/work.models.js';
 import usersModel from '../database/models/users.model.js';
 import loanModel from '../database/models/loan/loans.models.js';
 import {
+    generateUUID,
     toObjectId,
     transformNestedObject,
     validateRequestPayload,
@@ -21,6 +22,9 @@ import { uploadFileToFirebase } from '../utils/firebase.js';
 import createLoan from './loans/createLoan.js';
 import LoanRepository from '../database/repository/loan.repository.js';
 import paymentModels from '../database/models/loan/payment.models.js';
+import balanceModel from '../database/models/balance.model.js';
+import transactionModels from '../database/models/transaction.models.js';
+import { createDisbursement, createPaymentIn } from '../utils/flip.js';
 
 export default class BorrowerService {
     constructor() {
@@ -31,6 +35,62 @@ export default class BorrowerService {
         this.loanRepo = new LoanRepository();
         this.loanModel = loanModel;
         this.paymentModel = paymentModels;
+        this.balanceModel = balanceModel;
+        this.transactionModel = transactionModels;
+    }
+    async getBorrowerProfile(userId) {
+        try {
+            if (!userId) {
+                throw new ValidationError('user Id is required!');
+            }
+
+            const lender = await this.borrowerModel
+                .aggregate([
+                    {
+                        $match: {
+                            userId: toObjectId(userId),
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            localField: 'userId',
+                            foreignField: '_id',
+                            as: 'user',
+                        },
+                    },
+                    {
+                        $unwind: '$user',
+                    },
+                    {
+                        $addFields: {
+                            name: '$user.name',
+                            email: '$user.email',
+                            phoneNumber: '$user.phoneNumber',
+                            verified: '$user.verified',
+                        },
+                    },
+                    {
+                        $project: {
+                            user: 0,
+                            __v: 0,
+                            _id: 0,
+                            createdDate: 0,
+                            modifyDate: 0,
+                            status: 0,
+                        },
+                    },
+                ])
+                .exec();
+
+            if (!lender[0]) {
+                throw new NotFoundError('Borrower not found!');
+            }
+
+            return lender[0];
+        } catch (error) {
+            throw error;
+        }
     }
 
     async requestVerifyBorrower(userId, payload, files) {
@@ -129,62 +189,62 @@ export default class BorrowerService {
         }
     }
 
-    async getBorrowerProfile(payload) {
-        try {
-            const errors = validateRequestPayload(payload, ['userId', 'roles']);
-            if (errors.length > 0) {
-                throw new ValidationError(`${errors} field(s) are required!`);
-            }
+    // async getBorrowerProfile(payload) {
+    //     try {
+    //         const errors = validateRequestPayload(payload, ['userId', 'roles']);
+    //         if (errors.length > 0) {
+    //             throw new ValidationError(`${errors} field(s) are required!`);
+    //         }
 
-            const { userId, roles } = payload;
+    //         const { userId, roles } = payload;
 
-            // Check if user is a borrower
-            if (!roles.includes('borrower')) {
-                throw new AuthorizeError('User is not a borrower!');
-            }
+    //         // Check if user is a borrower
+    //         if (!roles.includes('borrower')) {
+    //             throw new AuthorizeError('User is not a borrower!');
+    //         }
 
-            const [user, borrower] = await Promise.allSettled([
-                await usersModel.findOne({ _id: userId }).select({
-                    createdDate: 0,
-                    modifyDate: 0,
-                    __v: 0,
-                    password: 0,
-                    salt: 0,
-                }),
-                await borrowerModel
-                    .findOne({ userId })
-                    .select({ createdDate: 0, modifyDate: 0, __v: 0 }),
-            ]);
+    //         const [user, borrower] = await Promise.allSettled([
+    //             await usersModel.findOne({ _id: userId }).select({
+    //                 createdDate: 0,
+    //                 modifyDate: 0,
+    //                 __v: 0,
+    //                 password: 0,
+    //                 salt: 0,
+    //             }),
+    //             await borrowerModel
+    //                 .findOne({ userId })
+    //                 .select({ createdDate: 0, modifyDate: 0, __v: 0 }),
+    //         ]);
 
-            if (!user.value) {
-                throw new NotFoundError('User not found!');
-            }
+    //         if (!user.value) {
+    //             throw new NotFoundError('User not found!');
+    //         }
 
-            const work = await this.workModel.findOne({ userId }).select({
-                userId: 0,
-                __v: 0,
-                createdDate: 0,
-                modifyDate: 0,
-                _id: 0,
-            });
+    //         const work = await this.workModel.findOne({ userId }).select({
+    //             userId: 0,
+    //             __v: 0,
+    //             createdDate: 0,
+    //             modifyDate: 0,
+    //             _id: 0,
+    //         });
 
-            // console.log('user', user);
+    //         // console.log('user', user);
 
-            const profile = {
-                ...user.value._doc,
-                ...borrower.value._doc,
-                work: work._doc,
-            };
+    //         const profile = {
+    //             ...user.value._doc,
+    //             ...borrower.value._doc,
+    //             work: work._doc,
+    //         };
 
-            delete profile['_id'];
+    //         delete profile['_id'];
 
-            console.log('Borrower profile fetched!');
+    //         console.log('Borrower profile fetched!');
 
-            return profile;
-        } catch (error) {
-            throw error;
-        }
-    }
+    //         return profile;
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     async requestLoan(user, payload) {
         try {
@@ -250,6 +310,7 @@ export default class BorrowerService {
                 (loan.value.status === 'on request' ||
                     loan.value.status === 'in borrowing' ||
                     loan.value.status === 'on process' ||
+                    loan.value.status === 'disbursement' ||
                     loan.value.status === 'unpaid')
             ) {
                 throw new ActiveLoanError('You already has an active loan!');
@@ -317,6 +378,174 @@ export default class BorrowerService {
         }
     }
 
+    async getFundDisbursement(userId) {
+        try {
+            const loan = await this.loanModel.aggregate([
+                {
+                    $match: {
+                        $and: [
+                            {
+                                userId: toObjectId(userId),
+                            },
+                            {
+                                status: 'in borrowing',
+                            },
+                        ],
+                    },
+                },
+                {
+                    $addFields: {
+                        loanId: '$_id',
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        userId: 0,
+                        borrowerId: 0,
+                        createdDate: 0,
+                        modifyDate: 0,
+                        purpose: 0,
+                        borrowingCategory: 0,
+                        status: 0,
+                        __v: 0,
+                    },
+                },
+            ]);
+            return loan.length > 0 ? loan[0] : [];
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async postFundDisbursement(userId, payload) {
+        try {
+            const errors = validateRequestPayload(payload, [
+                'loanId',
+                'bankId',
+            ]);
+            if (errors.length > 0) {
+                throw new ValidationError(`${errors} field(s) are required!`);
+            }
+            const loan = await this.loanModel.findOne({
+                _id: payload.loanId,
+            });
+            console.log('loan', loan);
+            const balance = await this.balanceModel.findOne(
+                {
+                    userId: toObjectId(userId),
+                    // 'account._id': toObjectId(payload.bankId),
+                },
+                // {
+                //     $inc: {
+                //         amount: -loan.amount,
+                //     },
+                // },
+            );
+            const filteredBalance = balance?.account?.filter((item) =>
+                item._id.equals(toObjectId(payload.bankId)),
+            );
+
+            if (filteredBalance.length < 1) {
+                throw new NotFoundError('Bank account not found!');
+            }
+            // balance.amount -= loan.amount;
+            // balance.save();
+
+            const transactionId = `${userId}-${generateUUID()}`;
+            const data = {
+                account_number: filteredBalance[0].accountNumber,
+                bank_code: filteredBalance[0].bankCode,
+                amount: loan.amount,
+                remark: 'Disbursement',
+                idempotency_key: transactionId,
+            };
+
+            const result = await createDisbursement(data);
+
+            await this.transactionModel.create({
+                transactionId,
+                userId,
+                type: 'Disbursement',
+                amount: loan.amount,
+                status: 'pending',
+            });
+
+            // console.log('balance', balance);
+            // console.log('filteredBalance', filteredBalance);
+            return true;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async postRepayment(userId, payload) {
+        try {
+            const errors = validateRequestPayload(payload, [
+                'loanId',
+                'billId',
+            ]);
+            if (errors.length > 0) {
+                throw new ValidationError(`${errors} field(s) are required!`);
+            }
+
+            const [loan, user] = await Promise.allSettled([
+                this.loanModel.findOne({ userId }),
+                this.userModel.findOne({ _id: userId }),
+            ]);
+
+            if (!loan.value) {
+                throw new NotFoundError('Loan not found!');
+            }
+
+            const transactionId = `${userId}-${generateUUID()}`;
+            // console.log('transactionId', transactionId);
+
+            const payment = await this.paymentModel.findOne(
+                { loanId: payload.loanId },
+                { paymentSchedule: 1, _id: 0 },
+            );
+            // console.log('payment', payment);
+
+            const paymentSchedule = payment.paymentSchedule.filter(
+                (item) => item._id.toString() === payload.billId,
+            );
+
+            // console.log('paymentSchedule', paymentSchedule);
+            if (paymentSchedule.length < 1) {
+                throw new NotFoundError(
+                    'Kami tidak dapat menemukan tagihan anda.',
+                );
+            }
+            // return;
+
+            const { paymentLink } = await createPaymentIn({
+                amount: paymentSchedule[0].amount,
+                title: `Repayment #${transactionId}`,
+                senderName: user.value.name,
+                senderPhoneNumber: user.value.phoneNumber,
+                senderEmail: user.value.email,
+                senderAddress: 'Indonesia',
+                isWebsite: payload.isWebsite,
+            });
+
+            // const billId = ''
+
+            await this.transactionModel.create({
+                userId: toObjectId(userId),
+                amount: paymentSchedule[0].amount,
+                transactionId,
+                status: 'pending',
+                type: 'Repayment',
+                paymentLink,
+                repaymentId: `${payload.loanId}-${payload.billId}`,
+            });
+            return { paymentLink };
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async getPaymentSchedule(userId) {
         try {
             const loans = await this.paymentModel.aggregate([
@@ -343,6 +572,7 @@ export default class BorrowerService {
                 },
                 {
                     $addFields: {
+                        // loanId: '$loan._id',
                         paymentSchedule: {
                             $filter: {
                                 input: {
@@ -355,12 +585,14 @@ export default class BorrowerService {
                                                     $in: [
                                                         '$$item.status',
                                                         [
+                                                            'unpaid',
                                                             'repayment',
                                                             'late repayment',
                                                         ],
                                                     ],
                                                 },
                                                 {
+                                                    billId: '$$item._id',
                                                     amount: '$$item.amount',
                                                     status: '$$item.status',
                                                     date: {
@@ -444,10 +676,15 @@ export default class BorrowerService {
                     },
                 },
                 {
+                    $sort: {
+                        'paymentSchedule.date': 1,
+                    },
+                },
+                {
                     $project: {
                         _id: 0,
                         loan: 0,
-                        loanId: 0,
+                        // loanId: 0,
                         userId: 0,
                         createdDate: 0,
                         modifyDate: 0,

@@ -78,7 +78,7 @@ export default class AdminService {
                 throw new ValidationError(`${errors} field(s) is required`);
             }
 
-            const { userId, status, message } = payload;
+            const { userId, status, message, loanLimit } = payload;
 
             if (!['approved', 'rejected'].includes(status)) {
                 throw new ValidationError(
@@ -89,6 +89,12 @@ export default class AdminService {
             if (status === 'rejected' && !message) {
                 throw new ValidationError(
                     `message is required when status is rejected`,
+                );
+            }
+
+            if (status === 'approved' && !loanLimit) {
+                throw new ValidationError(
+                    `loanLimit is required when status is approved`,
                 );
             }
 
@@ -115,7 +121,7 @@ export default class AdminService {
             } else if (user.roles === 'borrower') {
                 await this.borrowersModel.findOneAndUpdate(
                     { userId },
-                    { status: verifiedStatus },
+                    { status: verifiedStatus, loanLimit },
                 );
             }
 
