@@ -21,7 +21,7 @@ class LoanService {
         // this.borrowerContract = borrowerContractModels;
     }
 
-    async showAvailableLoans(params) {
+    async showAvailableLoans(userId, params) {
         try {
             let {
                 page,
@@ -84,31 +84,73 @@ class LoanService {
                 cacheKey += `-[query:${q.replace(/\s/g, '')}]`;
             }
 
+            // const loansFunding = await this.fundingModels.find({userId, status: })
+            // console.log('loansFunding',loansFunding)
+
             const [loans, totalItems] = await Promise.all([
                 this.loanRepository.lookupFind(
                     { $and: queryFilter },
                     // { loanPurpose: q },
+                    userId,
                     page,
                     limit,
                     sort,
                     order,
                 ),
-                this.loansModels.countDocuments({
-                    $and: [
+                this.loansModels
+                    .aggregate([
                         {
-                            $or: [
-                                { status: 'on request' },
-                                { status: 'on process' },
-                            ],
+                            $match: {
+                                $and: [
+                                    {
+                                        $or: [
+                                            { status: 'on request' },
+                                            { status: 'on process' },
+                                        ],
+                                    },
+                                    ...queryFilter,
+                                ],
+                            },
                         },
-                        ...queryFilter,
-                    ],
-                }),
+                        {
+                            $lookup: {
+                                from: 'fundings',
+                                localField: '_id',
+                                foreignField: 'loanId',
+                                as: 'funding',
+                            },
+                        },
+                        {
+                            $match: {
+                                funding: {
+                                    $not: {
+                                        $elemMatch: {
+                                            userId: toObjectId(userId),
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                loanCount: { $sum: 1 },
+                            },
+                        },
+                        {
+                            $project: {
+                                _id: 0,
+                                loanCount: { $ifNull: ['$loanCount', 0] },
+                            },
+                        },
+                    ])
+                    .exec(),
             ]);
-            // console.log('loans', loans);
+            const loanCount =
+                totalItems.length < 1 ? 0 : totalItems[0].loanCount;
             return returnDataPagination(
                 loans,
-                totalItems,
+                loanCount,
                 {
                     ...params,
                 },

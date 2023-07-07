@@ -1,6 +1,8 @@
 import balanceModel from '../../database/models/balance.model.js';
 import loansModels from '../../database/models/loan/loans.models.js';
+import paymentModels from '../../database/models/loan/payment.models.js';
 import transactionModels from '../../database/models/transaction.models.js';
+import { getCurrentJakartaTime } from '../../utils/index.js';
 
 export default async (req, res, next) => {
     try {
@@ -40,6 +42,26 @@ export default async (req, res, next) => {
                             status: 'disbursement',
                         },
                     );
+
+                    const paymentDate = new Date(getCurrentJakartaTime());
+
+                    let paymentDateIncrement = 0;
+                    const payment = await paymentModels.findOne({
+                        loanId: loan._id,
+                    });
+
+                    const newPaymentDate = payment.paymentSchedule.forEach(
+                        (item) => {
+                            paymentDateIncrement += 30;
+                            item.date = paymentDate.setDate(
+                                paymentDate.getDate() + paymentDateIncrement,
+                            );
+                        },
+                    );
+
+                    payment.status = 'disbursement';
+                    payment.paymentSchedule = newPaymentDate;
+                    payment.save();
                 }
 
                 await Promise.allSettled([

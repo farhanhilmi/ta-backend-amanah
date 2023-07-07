@@ -11,15 +11,8 @@ import mongoose from 'mongoose';
  */
 const statusOptions = {
     type: String,
-    enum: [
-        'on request',
-        'on process',
-        'in borrowing',
-        'unpaid',
-        'repayment',
-        'late repayment',
-    ],
-    default: 'on request',
+    enum: ['in borrowing', 'disbursement', 'repayment'],
+    default: 'in borrowing',
 };
 
 const Schema = mongoose.Schema;
@@ -60,6 +53,7 @@ const schema = new Schema(
                 },
             },
         ],
+        status: statusOptions,
     },
     {
         timestamps: { createdAt: 'createdDate', updatedAt: 'modifyDate' },

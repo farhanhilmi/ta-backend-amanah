@@ -1,4 +1,5 @@
 import balanceModel from '../../database/models/balance.model.js';
+import fundingModels from '../../database/models/loan/funding.models.js';
 import loansModels from '../../database/models/loan/loans.models.js';
 import paymentModels from '../../database/models/loan/payment.models.js';
 import transactionModels from '../../database/models/transaction.models.js';
@@ -64,10 +65,29 @@ export default async (req, res, next) => {
                                 { paymentSchedule: 1, _id: 0 },
                             );
 
+                            let repaymentStatus = 'disbursement';
+                            let paidStatus = '';
+
                             const paymentSchedule =
                                 payment.paymentSchedule.filter(
-                                    (item) =>
-                                        item._id.toString() === repaymentId,
+                                    (item, index) => {
+                                        if (
+                                            index <
+                                            payment.paymentSchedule.length - 1
+                                        ) {
+                                            if (item.date < new Date()) {
+                                                repaymentStatus =
+                                                    'late repayment';
+                                                paidStatus = 'late paid';
+                                            } else {
+                                                repaymentStatus = 'repayment';
+                                                paidStatus = 'paid';
+                                            }
+                                        }
+                                        return (
+                                            item._id.toString() === repaymentId
+                                        );
+                                    },
                                 );
 
                             if (paymentSchedule.length === 0) {
@@ -78,15 +98,11 @@ export default async (req, res, next) => {
                                 break;
                             }
 
-                            let repaymentStatus = '';
-                            let paidStatus = '';
-                            if (paymentSchedule[0].date < new Date()) {
-                                repaymentStatus = 'late repayment';
-                                paidStatus = 'late paid';
-                            } else {
-                                paidStatus = 'paid';
-                                repaymentStatus = 'repayment';
-                            }
+                            // if (paymentSchedule[0].date < new Date()) {
+                            //     // repaymentStatus = 'late repayment';
+                            // } else {
+                            //     // repaymentStatus = 'repayment';
+                            // }
 
                             await Promise.allSettled([
                                 loansModels.findOneAndUpdate(
@@ -107,10 +123,28 @@ export default async (req, res, next) => {
                                         $set: {
                                             'paymentSchedule.$.status':
                                                 paidStatus,
+                                            status: 'repayment',
                                         },
                                     },
                                 ),
                             ]);
+
+                            const fundings = await fundingModels.find({
+                                loanId,
+                            });
+
+                            fundings.forEach(async (funding) => {
+                                const totalReturn =
+                                    funding.amount + funding.yield;
+                                await balanceModel.findOneAndUpdate(
+                                    {
+                                        userId: funding.userId,
+                                    },
+                                    {
+                                        $inc: { amount: totalReturn },
+                                    },
+                                );
+                            });
 
                             user.status = 'done';
                             await user.save();

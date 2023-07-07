@@ -335,6 +335,7 @@ export default class LoanRepository {
 
     async lookupFind(
         query,
+        userId,
         page = 1,
         limit = 10,
         sort = 'createdDate',
@@ -372,7 +373,6 @@ export default class LoanRepository {
                             as: 'funding',
                         },
                     },
-
                     {
                         // remove array from result only return object
                         $unwind: '$borrower',
@@ -403,6 +403,17 @@ export default class LoanRepository {
                                         //         },
                                         //     },
                                         // ],
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $match: {
+                            funding: {
+                                $not: {
+                                    $elemMatch: {
+                                        userId: toObjectId(userId),
                                     },
                                 },
                             },

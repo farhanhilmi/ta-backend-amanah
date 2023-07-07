@@ -390,6 +390,7 @@ export default class LenderService {
                 }
                 await this.paymentModel.create({
                     loanId: loan._id,
+                    status: 'in borrowing',
                     paymentSchedule,
                 });
 

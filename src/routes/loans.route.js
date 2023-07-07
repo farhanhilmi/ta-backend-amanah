@@ -13,7 +13,11 @@ const Routes = () => {
         controller.getLoanRecommendation.bind(controller),
     );
 
-    router.get('/available', controller.getAllAvailableLoans.bind(controller));
+    router.get(
+        '/available',
+        authenticateToken,
+        controller.getAllAvailableLoans.bind(controller),
+    );
 
     router.get('/available/:loanId', controller.getLoanById.bind(controller));
 

@@ -24,7 +24,10 @@ export class LoansController {
     async getAllAvailableLoans(req, res, next) {
         try {
             // const { page, limit, sort, order } = req.query;
-            const data = await this.loanService.showAvailableLoans(req.query);
+            const data = await this.loanService.showAvailableLoans(
+                req.user.userId,
+                req.query,
+            );
             // io.emit(`notification#${userId}`, data);
             res.status(200).json(
                 responseData(

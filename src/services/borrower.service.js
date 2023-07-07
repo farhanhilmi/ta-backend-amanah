@@ -550,6 +550,11 @@ export default class BorrowerService {
         try {
             const loans = await this.paymentModel.aggregate([
                 {
+                    $match: {
+                        status: 'disbursement',
+                    },
+                },
+                {
                     $lookup: {
                         from: 'loans',
                         localField: 'loanId',
@@ -588,6 +593,8 @@ export default class BorrowerService {
                                                             'unpaid',
                                                             'repayment',
                                                             'late repayment',
+                                                            'paid',
+                                                            'late paid',
                                                         ],
                                                     ],
                                                 },
@@ -628,24 +635,27 @@ export default class BorrowerService {
                                             },
                                         },
                                     },
+                                    // $and: [
+                                    //     {
+                                    //         $anyElementTrue: {
+                                    //             $map: {
+                                    //                 input: '$paymentSchedule',
+                                    //                 as: 'item',
+                                    //                 in: {
+                                    //                     $eq: [
+                                    //                         '$$item.status',
+                                    //                         'unpaid',
+                                    //                     ],
+                                    //                 },
+                                    //             },
+                                    //         },
+                                    //     },
+                                    //     {
+                                    //         $gte: [new Date(), '$$item.date'],
+                                    //     },
+                                    // ],
                                 },
-                                // {
-                                //     $arrayElemAt: [
-                                //         {
-                                //             $filter: {
-                                //                 input: '$paymentSchedule',
-                                //                 as: 'item',
-                                //                 cond: {
-                                //                     $eq: [
-                                //                         '$$item.status',
-                                //                         'unpaid',
-                                //                     ],
-                                //                 },
-                                //             },
-                                //         },
-                                //         0,
-                                //     ],
-                                // },
+
                                 {
                                     $let: {
                                         vars: {
@@ -656,9 +666,19 @@ export default class BorrowerService {
                                                             input: '$paymentSchedule',
                                                             as: 'item',
                                                             cond: {
-                                                                $eq: [
-                                                                    '$$item.status',
-                                                                    'unpaid',
+                                                                $and: [
+                                                                    {
+                                                                        $eq: [
+                                                                            '$$item.status',
+                                                                            'unpaid',
+                                                                        ],
+                                                                    },
+                                                                    // {
+                                                                    //     $gte: [
+                                                                    //         new Date(),
+                                                                    //         '$$item.date',
+                                                                    //     ],
+                                                                    // },
                                                                 ],
                                                             },
                                                         },
@@ -670,7 +690,7 @@ export default class BorrowerService {
                                         in: '$$unpaidItem.amount',
                                     },
                                 },
-                                {},
+                                0,
                             ],
                         },
                     },
@@ -686,6 +706,7 @@ export default class BorrowerService {
                         loan: 0,
                         // loanId: 0,
                         userId: 0,
+                        status: 0,
                         createdDate: 0,
                         modifyDate: 0,
                         __v: 0,
@@ -694,7 +715,46 @@ export default class BorrowerService {
             ]);
 
             // console.log('loans', loans);
-            return loans[0];
+            if (loans.length < 1) {
+                return {
+                    currentMonth: 0,
+                    paymentSchedule: [],
+                };
+            }
+            // let currentMonth = 0;
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth() + 1;
+
+            // for
+            const hasPaidInCurrentMonth = loans[0].paymentSchedule.some(
+                (item) => {
+                    const itemDate = new Date(item.date);
+                    // const itemMonth = itemDate.getMonth() + 1; // Get the month of the item's date
+
+                    return (
+                        ['paid', 'late paid'].includes(item.status) &&
+                        currentDate < itemDate
+                    );
+                },
+            );
+
+            // loans[0].paymentSchedule.filter((item) => {
+            //     // console.log('item', item);
+            //     if (
+            //         ['paid', 'late paid'].includes(item.status) &&
+            //         new Date() < new Date(item.date)
+            //     ) {
+            //         console.log('MASUKKK');
+            //         currentMonth = 0;
+            //         return;
+            //     }
+            //     currentMonth = item.amount;
+            // });
+            const currentMonthAmount = hasPaidInCurrentMonth
+                ? 0
+                : loans[0].currentMonth;
+            // console.log('currentMonth', currentMonthAmount);
+            return { ...loans[0], currentMonth: currentMonthAmount };
         } catch (error) {
             throw error;
         }
