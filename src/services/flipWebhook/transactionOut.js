@@ -34,7 +34,7 @@ export default async (req, res, next) => {
                 const transactionTime = parsedData.time_served;
 
                 if (parsedData.remark === 'Disbursement') {
-                    await loansModels.findOneAndUpdate(
+                    const loan = await loansModels.findOneAndUpdate(
                         {
                             userId,
                         },
@@ -44,18 +44,28 @@ export default async (req, res, next) => {
                     );
 
                     const paymentDate = new Date(getCurrentJakartaTime());
-
                     let paymentDateIncrement = 0;
+
                     const payment = await paymentModels.findOne({
                         loanId: loan._id,
                     });
 
-                    const newPaymentDate = payment.paymentSchedule.forEach(
+                    const newPaymentDate = payment.paymentSchedule.map(
                         (item) => {
+                            // paymentDateIncrement += 30;
+                            // item.date = paymentDate.setDate(
+                            //     paymentDate.getDate() + paymentDateIncrement,
+                            // );
+
                             paymentDateIncrement += 30;
-                            item.date = paymentDate.setDate(
-                                paymentDate.getDate() + paymentDateIncrement,
+                            const updatedItem = { ...item };
+                            updatedItem.date = new Date(
+                                paymentDate.setDate(
+                                    paymentDate.getDate() +
+                                        paymentDateIncrement,
+                                ),
                             );
+                            return updatedItem;
                         },
                     );
 

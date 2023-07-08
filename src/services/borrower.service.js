@@ -412,7 +412,7 @@ export default class BorrowerService {
                     },
                 },
             ]);
-            return loan.length > 0 ? loan[0] : [];
+            return loan.length > 0 ? loan[0] : {};
         } catch (error) {
             throw error;
         }
@@ -430,6 +430,14 @@ export default class BorrowerService {
             const loan = await this.loanModel.findOne({
                 _id: payload.loanId,
             });
+            if (!loan) {
+                throw new NotFoundError('Loan not found!');
+            }
+            if (loan.status !== 'in borrowing') {
+                throw new RequestError(
+                    'Pinjaman anda belum bisa dicairkan saat ini dikarenakan total pinjaman belum terpenuhi atau sudah dicairkan sebelumnya. Jika terdapat kesalahan, mohon hubungi pihak Customer Service Amanah Syariah.',
+                );
+            }
             console.log('loan', loan);
             const balance = await this.balanceModel.findOne(
                 {
