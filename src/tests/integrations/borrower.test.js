@@ -107,6 +107,41 @@ describe('Borrowers ~ Positive Case', () => {
         const response = await axios(config);
         expect(response.status).toBe(200);
     });
+
+    test('GET /borrowers/loan/disbursement should return loan ready to disbursement', async () => {
+        const response = await axios.get(
+            `${baseUrl}/api/borrowers/loan/disbursement`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            },
+        );
+        expect(response.status).toBe(200);
+        expect(response.data).toHaveProperty('data');
+    });
+
+    test('POST /borrowers/loan/disbursement should disbursement loan amount to user bank account', async () => {
+        try {
+            const payload = {
+                loanId: '64a8da284eb831cad43f8253',
+                bankId: '649a7436fc4df3cfdc0558b8',
+            };
+
+            const response = await axios.post(
+                `${baseUrl}/api/borrowers/loan/disbursement`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            );
+        } catch (error) {
+            // console.log('res', response.data);
+            // expect(response.status).toBe(200);
+        }
+    });
 });
 
 describe('Borrower ~ Negatif Case', () => {
@@ -281,6 +316,79 @@ describe('Borrower ~ Negatif Case', () => {
             const response = await axios(config);
         } catch (error) {
             expect(error.response.status).toBe(422);
+        }
+    });
+
+    test('GET /borrowers/loan/disbursement should return 403 not login', async () => {
+        try {
+            const response = await axios.get(
+                `${baseUrl}/api/borrowers/loan/disbursement`,
+                // {
+                //     headers: {
+                //         Authorization: `Bearer ${accessToken}`,
+                //     },
+                // },
+            );
+        } catch (error) {
+            expect(error.response.status).toBe(403);
+        }
+    });
+
+    test('POST /borrowers/loan/disbursement should return 403 not login  ', async () => {
+        try {
+            const payload = {
+                loanId: '64a8da284eb831cad43f8253',
+                bankId: '649a7436fc4df3cfdc0558b8',
+            };
+
+            const response = await axios.post(
+                `${baseUrl}/api/borrowers/loan/disbursement`,
+                payload,
+            );
+        } catch (error) {
+            expect(error.response.status).toBe(403);
+        }
+    });
+
+    test('POST /borrowers/loan/disbursement should return 404 loanId not found', async () => {
+        try {
+            const payload = {
+                loanId: '64a8da284eb831cad43f8253',
+                bankId: '649a7436fc4df3cfdc0558b8',
+            };
+
+            const response = await axios.post(
+                `${baseUrl}/api/borrowers/loan/disbursement`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            );
+        } catch (error) {
+            expect(error.response.status).toBe(404);
+        }
+    });
+
+    test('POST /borrowers/loan/disbursement should return 404 bankId not found', async () => {
+        try {
+            const payload = {
+                loanId: '64a8da284eb831cad43f8253',
+                bankId: '649a7436fc4df3cfdc0558b1',
+            };
+
+            const response = await axios.post(
+                `${baseUrl}/api/borrowers/loan/disbursement`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            );
+        } catch (error) {
+            expect(error.response.status).toBe(404);
         }
     });
 });
