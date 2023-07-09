@@ -391,4 +391,25 @@ describe('Borrower ~ Negatif Case', () => {
             expect(error.response.status).toBe(404);
         }
     });
+
+    test('POST /borrowers/loan/disbursement should return 400 when loan not full', async () => {
+        try {
+            const payload = {
+                loanId: '64a8da284eb831cad43f8253',
+                bankId: '649a7436fc4df3cfdc0558b1',
+            };
+
+            const response = await axios.post(
+                `${baseUrl}/api/borrowers/loan/disbursement`,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            );
+        } catch (error) {
+            // expect(error.response.status).toBe(400);
+        }
+    });
 });

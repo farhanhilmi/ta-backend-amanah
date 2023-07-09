@@ -152,6 +152,25 @@ describe('Authentication ~ Negatif Case', () => {
         }
     });
 
+    test('POST /authentication/register should return 422 when phone number invalid', async () => {
+        try {
+            const newUser = {
+                name: 'Sergio ramos',
+                email: 'edejajan@yopmail.com',
+                password: 'Jari$yaya',
+                roles: 'lender',
+                // phoneNumber: 62892838232,
+            };
+
+            const response = await axios.post(
+                `${baseUrl}/api/authentication/register`,
+                newUser,
+            );
+        } catch (error) {
+            expect(error.response.status).toBe(422);
+        }
+    });
+
     test('POST /authentication/register should return 409 for existing email', async () => {
         try {
             const newUser = {

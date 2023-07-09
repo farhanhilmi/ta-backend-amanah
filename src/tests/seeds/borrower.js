@@ -24,7 +24,7 @@ export default [
     {
         _id: '64880a090e51f774902f165c',
         userId: toObjectId('649fa6d7666b2f32b476f848'),
-        loanLimit: null,
+        loanLimit: '100000000',
         income: null,
         status: 'verified',
         performance: {

@@ -138,7 +138,7 @@ const resultData = [
         phoneNumber: 62853233602646,
         password:
             'GHJmY1mkZV+b8h4c2QVgGQ==.Gq4ZSNVgoO/SyAEU/DEhKQWHLw/H1X6f8euVMeJnlLLFKY8sZC/mrzzCnORR4SarvyKl4Gpfp1r2EWj4sM1tlw==',
-        salt: 'GHJmY1mkZV+b8h4c2QVgGQ==',
+        salt: 'F0TsrArsnh4HIYuZ3dkDIg==',
         verified: true,
         roles: 'lender',
         birthDate: '2001-09-04',
