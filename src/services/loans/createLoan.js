@@ -1,13 +1,18 @@
+import config from '../../config/index.js';
+import autoLendModels from '../../database/models/loan/autoLend.models.js';
+import borrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
 import BorrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
+import fundingModels from '../../database/models/loan/funding.models.js';
 // import BorrowerContractModels from '../../database/models/loan/BorrowerContract.models.js';
 import loansModels from '../../database/models/loan/loans.models.js';
 import usersModel from '../../database/models/users.model.js';
-import { toObjectId } from '../../utils/index.js';
+import { getCurrentJakartaTime, toObjectId } from '../../utils/index.js';
 import {
     generateContractPDF,
     generateQrImage,
     generateSignature,
 } from '../../utils/signature.js';
+import { sendLoanFullyFunded } from '../mail/sendMail.js';
 // import borrowerContract from '../../database/models/loan/borrowerContract.models.js';
 
 export default async (payload) => {
@@ -59,6 +64,150 @@ export default async (payload) => {
             signatureKey,
             contractLink: pdfLink,
         });
+
+        // ?CHECK IF AUTO LEND DATA MATCH WITH THIS LOAN
+        const autoLends = await autoLendModels.find({
+            borrowingCategory: {
+                $regex: new RegExp(data.borrowingCategory, 'i'),
+            },
+            status: 'waiting',
+            'tenorLength.start': {
+                $lte: parseInt(data.tenor),
+            },
+            'tenorLength.end': {
+                $gte: parseInt(data.tenor),
+            },
+            'yieldRange.start': {
+                $lte: parseInt(data.yieldReturn),
+            },
+            'yieldRange.end': {
+                $gte: parseInt(data.yieldReturn),
+            },
+        });
+
+        if (autoLends.length > 0) {
+            const funding = autoLends[0];
+            const loanData = loan.value;
+            // if (loanData.amount)
+            const totalFunds = await fundingModels.aggregate([
+                {
+                    $match: {
+                        loanId: loanData._id,
+                    },
+                },
+                {
+                    $group: {
+                        _id: '$loanId',
+                        totalFunds: {
+                            $sum: '$amount',
+                        },
+                    },
+                },
+            ]);
+
+            let currentTotalFunds = !totalFunds[0]?.totalFunds
+                ? 0
+                : totalFunds[0]?.totalFunds;
+
+            for (let i = 0; i < autoLends.length; i++) {
+                currentTotalFunds =
+                    currentTotalFunds + autoLends[i].amountToLend;
+
+                if (currentTotalFunds > loan.amount) {
+                    continue;
+                    // throw new RequestError(
+                    //     "You can't fund more than the available loan amount.",
+                    // );
+                }
+
+                if (currentTotalFunds === loan.amount) {
+                    loan.status = 'in borrowing';
+                    const paymentSchedule = [];
+                    const paymentDate = new Date(getCurrentJakartaTime());
+                    const totalBill =
+                        loan.amount +
+                        loan.yieldReturn +
+                        parseInt(config.TAX_AMOUNT_APP);
+                    if (loan.paymentSchema === 'Pelunasan Cicilan') {
+                        let paymentDateIncrement = 0;
+
+                        const monthlyPayment = Math.floor(
+                            totalBill / loan.tenor,
+                        ); // Calculate the integer part of the monthly payment
+                        const lastMonthPayment =
+                            totalBill - monthlyPayment * (loan.tenor - 1); // Calculate the payment for the last month
+                        for (let i = 0; i < loan.tenor - 1; i++) {
+                            paymentDateIncrement += 30;
+                            // const loanAmount =
+                            //     (loan.amount + loan.yieldReturn) / loan.tenor;
+                            paymentSchedule.push({
+                                amount: monthlyPayment,
+                                date: paymentDate.setDate(
+                                    paymentDate.getDate() +
+                                        paymentDateIncrement,
+                                ),
+                            });
+                        }
+                        paymentSchedule.push({
+                            amount: lastMonthPayment,
+                            date: paymentDate.setDate(
+                                paymentDate.getDate() +
+                                    paymentDateIncrement +
+                                    30,
+                            ),
+                        });
+                        // await this.paymentModel.create({
+                        //     loanId: loan._id,
+                        //     paymentSchedule,
+                        // });
+                    } else {
+                        paymentSchedule.push({
+                            amount: totalBill,
+                            date: paymentDate.setDate(
+                                paymentDate.getDate() + loan.tenor * 30,
+                            ),
+                        });
+                    }
+                    await paymentModel.create({
+                        loanId: loan._id,
+                        status: 'in borrowing',
+                        paymentSchedule,
+                    });
+
+                    const [borrowerContract, borrowerUser] =
+                        await Promise.allSettled([
+                            borrowerContractModels.findOne(
+                                { loanId: loan._id },
+                                { contractLink: 1, _id: 0 },
+                            ),
+                            usersModel.findOne(
+                                { _id: loan.userId },
+                                { name: 1, email: 1, _id: 0 },
+                            ),
+                        ]);
+                    const dashboardLink =
+                        'https://amanahsyariah.vercel.app/lender';
+                    // console.log('borrowerUser', borrowerUser);
+                    const borrower = {
+                        name: borrowerUser.value.name,
+                        email: borrowerUser.value.email,
+                    };
+                    // console.log('contractLink', borrowerContract.value);
+                    sendLoanFullyFunded(
+                        borrower,
+                        loan,
+                        dashboardLink,
+                        borrowerContract.value.contractLink,
+                    );
+                } else {
+                    loan.status = 'on process';
+                }
+                break;
+            }
+
+            loan.value.status = '';
+        }
+
         // deleteCache(true, 'availableLoans-*');
         // PublishMessage(messageData, 'UPDATE_BORROWER_STATUS', 'Borrower');
 

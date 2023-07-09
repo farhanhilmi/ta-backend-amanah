@@ -1,10 +1,20 @@
 import config from '../../config/index.js';
+import balanceModel from '../../database/models/balance.model.js';
 import lenderModel from '../../database/models/lender/lender.model.js';
 import autoLendModels from '../../database/models/loan/autoLend.models.js';
+import borrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
 import fundingModels from '../../database/models/loan/funding.models.js';
 import loansModels from '../../database/models/loan/loans.models.js';
 import paymentModels from '../../database/models/loan/payment.models.js';
+import usersModel from '../../database/models/users.model.js';
 import { getCurrentJakartaTime, toTitleCase } from '../../utils/index.js';
+import lenderSignature from '../../utils/lenderSignature.js';
+import {
+    generateContractPDF,
+    generateQrImage,
+    generateSignature,
+} from '../../utils/signature.js';
+import { sendLoanFullyFunded } from '../mail/sendMail.js';
 
 export default async (payload) => {
     try {
@@ -141,7 +151,6 @@ export default async (payload) => {
             ])
             .exec();
 
-        // if auto lend not match with any loans then save to auto_lend table
         const autoLend = await autoLendModels.create({
             userId,
             tenorLength,
@@ -151,11 +160,13 @@ export default async (payload) => {
             // formatToJakartaTime(cancelTime),
         });
         if (loans.length === 0) {
+            // if auto lend not match with any loans then save to auto_lend table
             autoLend.status = 'waiting';
             await autoLend.save();
             // console.log('autoLend', autoLend);
             return autoLend;
         }
+
         // if auto lend match with loans then fund the loans
         const yieldReturn =
             loans[0].yieldReturn * (parseInt(amountToLend) / loans[0].amount);
@@ -170,6 +181,7 @@ export default async (payload) => {
             yield: yieldReturn,
         });
         autoLend.status = 'matched';
+
         // await autoLend.save();
 
         let currentTotalFunds = !loans[0]?.totalFunds
@@ -216,23 +228,116 @@ export default async (payload) => {
             } else {
                 paymentSchedule.push({
                     amount: totalBill,
-                    date: paymentDate.setDate(
-                        paymentDate.getDate() + loan.tenor * 30,
+                    date: paymentDate.setMonth(
+                        paymentDate.getMonth() + loan.tenor,
                     ),
                 });
             }
+
             await paymentModels.create({
                 loanId: loan._id,
                 paymentSchedule,
+                status: 'in borrowing',
             });
             autoLend.status = 'in borrowing';
+
+            // GENERATE CONTRACT FOR BORROWER
+            const signatureKey = generateSignature({
+                loanId: loan._id.toString(),
+                borrowerId: loan.borrowerId.toString(),
+            });
+
+            const qrData =
+                'https://www.google.com/search?q=ini+isi+halaman+validasi+contract.&oq=ini+isi+halaman+validasi+contract.&aqs=edge..69i57.30981j0j1&sourceid=chrome&ie=UTF-8';
+
+            const [qrImage, borrowerUser] = await Promise.allSettled([
+                generateQrImage(qrData),
+                usersModel.findOne(
+                    { _id: loan.userId },
+                    { name: 1, email: 1, _id: 0 },
+                ),
+            ]);
+
+            const pdfLink = await generateContractPDF({
+                userId,
+                loanId: loan._id.toString(),
+                borrowerName: borrowerUser.value.name,
+                // borrowerAddress: borrower.address,
+                borrowerEmail: borrowerUser.value.email,
+                borrowerPhone: borrowerUser.value.phoneNumber,
+                loanYield: loan.yieldReturn,
+                loanAmount: loan.amount,
+                loanTenor: loan.tenor,
+                paymentSchema: loan.paymentSchema,
+                qrImage: qrImage.value,
+            });
+
+            // await loan.updateOne({ contractLink: pdfLink }).exec();
+            // loan.save();
+            const borrowerContract = await borrowerContractModels.create({
+                borrowerId: loan.borrowerId,
+                loanId: loan._id,
+                signatureKey,
+                contractLink: pdfLink,
+            });
+
+            const dashboardLink = 'https://amanahsyariah.vercel.app/lender';
+            // console.log('borrowerUser', borrowerUser);
+            const borrower = {
+                name: borrowerUser.value.name,
+                email: borrowerUser.value.email,
+            };
+            // console.log('contractLink', borrowerContract.value);
+            sendLoanFullyFunded(
+                borrower,
+                loan,
+                dashboardLink,
+                borrowerContract,
+            );
         } else {
             loan.status = 'on process';
         }
 
-        await Promise.allSettled([autoLend.save(), loan.save()]);
+        // await Promise.allSettled([autoLend.save(), loan.save()]);
+
+        // Update balance for lender and borrower
+        const [unused1, unused2, contractLink, unused3, unused4] =
+            await Promise.allSettled([
+                balanceModel.findOneAndUpdate(
+                    {
+                        userId,
+                    },
+                    {
+                        $inc: {
+                            amount: -parseInt(amountToLend),
+                        },
+                    },
+                ),
+                balanceModel.findOneAndUpdate(
+                    {
+                        userId: loan.userId,
+                    },
+                    {
+                        $inc: {
+                            amount: parseInt(amountToLend),
+                        },
+                    },
+                ),
+                lenderSignature({
+                    loanId: loan._id.toString(),
+                    userId,
+                    lenderId: lender._id.toString(),
+                    borrowerId: loan.borrowerId,
+                }),
+                autoLend.save(),
+                loan.save(),
+            ]);
+
+        // *TODO: sent email to lender (Auto Lend Matched)
+        // contractLink.value
 
         // console.log('loans', JSON.stringify(loans, null, 2));
+        return true;
     } catch (error) {
         throw error;
     }

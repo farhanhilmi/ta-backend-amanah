@@ -383,8 +383,8 @@ export default class LenderService {
                 } else {
                     paymentSchedule.push({
                         amount: totalBill,
-                        date: paymentDate.setDate(
-                            paymentDate.getDate() + loan.tenor * 30,
+                        date: paymentDate.setMonth(
+                            paymentDate.getMonth() + loan.tenor,
                         ),
                     });
                 }

@@ -40,6 +40,10 @@ const schema = new Schema(
             type: Object,
             default: null,
         },
+        amountToLend: {
+            type: Number,
+            required: true,
+        },
         status: statusOptions,
     },
     {

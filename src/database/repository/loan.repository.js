@@ -596,4 +596,99 @@ export default class LoanRepository {
             throw error;
         }
     }
+
+    async findAutoLendMatch(matchQuery, amountToLend) {
+        try {
+            const statusMatchQuery = [
+                { status: 'on request' },
+                { status: 'on process' },
+            ];
+            return await loansModels
+                .aggregate([
+                    {
+                        $match: {
+                            $and: [{ $or: statusMatchQuery }, matchQuery],
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            localField: 'userId',
+                            foreignField: '_id',
+                            as: 'borrower',
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'fundings',
+                            localField: '_id',
+                            foreignField: 'loanId',
+                            pipeline: [{ $project: { amount: 1 } }],
+                            as: 'funding',
+                        },
+                    },
+                    {
+                        // check if available loan amount to fund is greater than amount to lend
+                        $match: {
+                            $expr: {
+                                $let: {
+                                    vars: {
+                                        availableToFund: {
+                                            // $sum: '$funding.amount',
+                                            $subtract: [
+                                                {
+                                                    $toInt: '$amount',
+                                                },
+                                                {
+                                                    $toInt: {
+                                                        $sum: '$funding.amount',
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    in: {
+                                        $gte: [
+                                            '$$availableToFund',
+                                            parseInt(amountToLend),
+                                        ],
+                                    },
+                                },
+                            },
+                        },
+                    },
+
+                    {
+                        // remove array from result only return object
+                        $unwind: '$borrower',
+                    },
+                    {
+                        $addFields: {
+                            totalFunds: {
+                                $sum: '$funding.amount',
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            modifyDate: 0,
+                            borrowerId: 0,
+                            __v: 0,
+                            'borrower._id': 0,
+                            'borrower.password': 0,
+                            'borrower.salt': 0,
+                            'borrower.idCardNumber': 0,
+                            'borrower.birthDate': 0,
+                            'borrower.idCardImage': 0,
+                            'borrower.createdDate': 0,
+                            'borrower.modifyDate': 0,
+                            'borrower.__v': 0,
+                        },
+                    },
+                ])
+                .exec();
+        } catch (error) {
+            throw error;
+        }
+    }
 }

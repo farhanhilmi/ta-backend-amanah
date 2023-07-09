@@ -1,4 +1,5 @@
 import balanceModel from '../../database/models/balance.model.js';
+import borrowerModels from '../../database/models/borrower/borrower.models.js';
 import fundingModels from '../../database/models/loan/funding.models.js';
 import loansModels from '../../database/models/loan/loans.models.js';
 import paymentModels from '../../database/models/loan/payment.models.js';
@@ -67,22 +68,30 @@ export default async (req, res, next) => {
 
                             let repaymentStatus = 'disbursement';
                             let paidStatus = '';
+                            let newLoanLimit = 0;
+                            const borrower = await borrowerModels.findOne({
+                                userId: user.userId,
+                            });
+                            const loanObject = await loansModels.findOne({
+                                _id: loanId,
+                            });
 
                             const paymentSchedule =
                                 payment.paymentSchedule.filter(
                                     (item, index) => {
                                         if (
-                                            index <
-                                            payment.paymentSchedule.length - 1
+                                            payment.paymentSchedule.length == 1
                                         ) {
-                                            if (item.date < new Date()) {
-                                                repaymentStatus =
-                                                    'late repayment';
-                                                paidStatus = 'late paid';
-                                            } else {
-                                                repaymentStatus = 'repayment';
-                                                paidStatus = 'paid';
-                                            }
+                                            newLoanLimit =
+                                                parseInt(borrower.loanLimit) -
+                                                parseInt(loanObject.amount);
+                                            repaymentStatus = 'repayment';
+                                            // if (item.date < new Date()) {
+                                            //     repaymentStatus =
+                                            //         'late repayment';
+                                            // } else {
+                                            //     repaymentStatus = 'repayment';
+                                            // }
                                         }
                                         return (
                                             item._id.toString() === repaymentId
@@ -98,11 +107,21 @@ export default async (req, res, next) => {
                                 break;
                             }
 
+                            if (paymentSchedule[0].date < new Date()) {
+                                // repaymentStatus = 'late repayment';
+                                paidStatus = 'late paid';
+                            } else {
+                                // repaymentStatus = 'repayment';
+                                paidStatus = 'paid';
+                            }
+
                             // if (paymentSchedule[0].date < new Date()) {
                             //     // repaymentStatus = 'late repayment';
                             // } else {
                             //     // repaymentStatus = 'repayment';
                             // }
+                            console.log('paidStatus', paidStatus);
+                            console.log('repaymentStatus', repaymentStatus);
 
                             await Promise.allSettled([
                                 loansModels.findOneAndUpdate(
@@ -123,7 +142,7 @@ export default async (req, res, next) => {
                                         $set: {
                                             'paymentSchedule.$.status':
                                                 paidStatus,
-                                            status: 'repayment',
+                                            status: repaymentStatus,
                                         },
                                     },
                                 ),
@@ -147,6 +166,8 @@ export default async (req, res, next) => {
                             });
 
                             user.status = 'done';
+                            borrower.loanLimit = newLoanLimit;
+                            borrower.save();
                             await user.save();
 
                             break;

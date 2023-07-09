@@ -17,6 +17,7 @@ import {
     RequestError,
     ValidationError,
     DataConflictError,
+    InsufficientError,
 } from '../utils/errorHandler.js';
 import { uploadFileToFirebase } from '../utils/firebase.js';
 import createLoan from './loans/createLoan.js';
@@ -316,6 +317,13 @@ export default class BorrowerService {
                 throw new ActiveLoanError('You already has an active loan!');
             }
 
+            // ? check if user loan limit is not exceeded
+            if (borrower.value.loanLimit < amount) {
+                throw new InsufficientError(
+                    'Total pinjaman tidak boleh melebihi limit pinjaman anda.',
+                );
+            }
+
             console.log('userId', user.userId);
 
             // const borrower = await this.borrowerModels.findOne({
@@ -330,7 +338,6 @@ export default class BorrowerService {
             // ) {
             //     throw new ActiveLoanError('You already has an active loan!');
             // }
-            // *TODO - check if user loan limit is not exceeded
 
             const loanApplication = {
                 purpose,
