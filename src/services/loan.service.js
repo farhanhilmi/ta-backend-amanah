@@ -207,6 +207,7 @@ class LoanService {
                     {
                         $unwind: '$loan',
                     },
+
                     {
                         $addFields: {
                             borrowingCategory: '$loan.borrowingCategory',
@@ -328,6 +329,18 @@ class LoanService {
                         },
                     },
                     {
+                        $match: {
+                            funding: {
+                                $not: {
+                                    $elemMatch: {
+                                        userId: toObjectId(userId),
+                                    },
+                                },
+                            },
+                        },
+                    },
+
+                    {
                         $project: {
                             _id: 0,
                             __v: 0,
@@ -348,8 +361,24 @@ class LoanService {
                 ])
                 .exec();
 
-            // console.log('fundings', JSON.stringify(fundings, null, 2));
-            return fundings;
+            const uniqueObjects = [];
+
+            fundings.forEach((object) => {
+                if (uniqueObjects.length < 1) {
+                    uniqueObjects.push(object);
+                }
+
+                uniqueObjects.forEach((item) => {
+                    if (item.loanId.toString() !== object.loanId.toString()) {
+                        uniqueObjects.push(object);
+                    }
+                });
+            });
+
+            // console.log(uniqueObjects);
+
+            // console.log('fundings', JSON.stringify(uniqueObjects, null, 2));
+            return uniqueObjects;
         } catch (error) {
             throw error;
         }

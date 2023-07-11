@@ -5,6 +5,7 @@ import BorrowerContractModels from '../../database/models/loan/borrowerContract.
 import fundingModels from '../../database/models/loan/funding.models.js';
 // import BorrowerContractModels from '../../database/models/loan/BorrowerContract.models.js';
 import loansModels from '../../database/models/loan/loans.models.js';
+import paymentModels from '../../database/models/loan/payment.models.js';
 import usersModel from '../../database/models/users.model.js';
 import { getCurrentJakartaTime, toObjectId } from '../../utils/index.js';
 import {
@@ -171,7 +172,7 @@ export default async (payload) => {
                         });
                     }
 
-                    await paymentModel.create({
+                    await paymentModels.create({
                         loanId: loanData._id,
                         status: 'in borrowing',
                         paymentSchedule,
