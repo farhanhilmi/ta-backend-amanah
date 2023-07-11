@@ -210,15 +210,13 @@ export default async (payload) => {
                     //     (loan.amount + loan.yieldReturn) / loan.tenor;
                     paymentSchedule.push({
                         amount: monthlyPayment,
-                        date: paymentDate.setDate(
-                            paymentDate.getDate() + paymentDateIncrement,
-                        ),
+                        date: paymentDate.setDate(paymentDate.getDate() + 30),
                     });
                 }
                 paymentSchedule.push({
                     amount: lastMonthPayment,
                     date: paymentDate.setDate(
-                        paymentDate.getDate() + paymentDateIncrement + 30,
+                        paymentDate.getMonth() + loan.tenor * 30,
                     ),
                 });
                 // await this.paymentModel.create({

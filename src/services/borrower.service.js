@@ -401,8 +401,53 @@ export default class BorrowerService {
                     },
                 },
                 {
+                    $lookup: {
+                        from: 'transaction',
+                        let: { loanId: '$_id' },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            {
+                                                $eq: [
+                                                    {
+                                                        $arrayElemAt: [
+                                                            {
+                                                                $split: [
+                                                                    '$transactionId',
+                                                                    '-',
+                                                                ],
+                                                            },
+                                                            0,
+                                                        ],
+                                                    },
+                                                    {
+                                                        $toString: '$$loanId',
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
+                        ],
+                        as: 'transaction',
+                    },
+                },
+
+                {
                     $addFields: {
                         loanId: '$_id',
+                        status: {
+                            $cond: {
+                                if: { $eq: [{ $size: '$transaction' }, 0] },
+                                then: 'Belum dicairkan',
+                                else: {
+                                    $arrayElemAt: ['$transaction.status', 0],
+                                },
+                            },
+                        },
                     },
                 },
                 {
@@ -414,7 +459,7 @@ export default class BorrowerService {
                         modifyDate: 0,
                         purpose: 0,
                         borrowingCategory: 0,
-                        status: 0,
+                        transaction: 0,
                         __v: 0,
                     },
                 },

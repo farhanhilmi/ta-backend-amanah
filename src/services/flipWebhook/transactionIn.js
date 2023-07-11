@@ -188,22 +188,24 @@ export default async (req, res, next) => {
                                 ),
                             ]);
 
-                            const fundings = await fundingModels.find({
-                                loanId,
-                            });
+                            if (repaymentStatus == 'repayment') {
+                                const fundings = await fundingModels.find({
+                                    loanId,
+                                });
 
-                            fundings.forEach(async (funding) => {
-                                const totalReturn =
-                                    funding.amount + funding.yield;
-                                await balanceModel.findOneAndUpdate(
-                                    {
-                                        userId: funding.userId,
-                                    },
-                                    {
-                                        $inc: { amount: totalReturn },
-                                    },
-                                );
-                            });
+                                fundings.forEach(async (funding) => {
+                                    const totalReturn =
+                                        funding.amount + funding.yield;
+                                    await balanceModel.findOneAndUpdate(
+                                        {
+                                            userId: funding.userId,
+                                        },
+                                        {
+                                            $inc: { amount: totalReturn },
+                                        },
+                                    );
+                                });
+                            }
 
                             user.status = 'done';
                             // borrower.loanLimit = newLoanLimit;

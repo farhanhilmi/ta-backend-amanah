@@ -77,8 +77,7 @@ export default async (req, res, next) => {
                                 // const updatedItem = { ...item };
                                 updatedItem.date = new Date(
                                     paymentDate.setDate(
-                                        paymentDate.getDate() +
-                                            paymentDateIncrement,
+                                        paymentDate.getDate() + 30,
                                     ),
                                 );
                             }
