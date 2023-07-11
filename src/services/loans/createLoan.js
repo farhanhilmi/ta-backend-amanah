@@ -88,6 +88,7 @@ export default async (payload) => {
         if (autoLends.length > 0) {
             const funding = autoLends[0];
             const loanData = loan.value;
+            let isMatch = false;
             // if (loanData.amount)
             const totalFunds = await fundingModels.aggregate([
                 {
@@ -113,30 +114,31 @@ export default async (payload) => {
                 currentTotalFunds =
                     currentTotalFunds + autoLends[i].amountToLend;
 
-                if (currentTotalFunds > loan.amount) {
+                if (currentTotalFunds > loanData.amount) {
                     continue;
                     // throw new RequestError(
                     //     "You can't fund more than the available loan amount.",
                     // );
                 }
 
-                if (currentTotalFunds === loan.amount) {
-                    loan.status = 'in borrowing';
+                if (currentTotalFunds === loanData.amount) {
+                    loanData.status = 'in borrowing';
+                    isMatch = true;
                     const paymentSchedule = [];
                     const paymentDate = new Date(getCurrentJakartaTime());
                     const totalBill =
-                        loan.amount +
-                        loan.yieldReturn +
+                        loanData.amount +
+                        loanData.yieldReturn +
                         parseInt(config.TAX_AMOUNT_APP);
-                    if (loan.paymentSchema === 'Pelunasan Cicilan') {
+                    if (loanData.paymentSchema === 'Pelunasan Cicilan') {
                         let paymentDateIncrement = 0;
 
                         const monthlyPayment = Math.floor(
-                            totalBill / loan.tenor,
+                            totalBill / loanData.tenor,
                         ); // Calculate the integer part of the monthly payment
                         const lastMonthPayment =
-                            totalBill - monthlyPayment * (loan.tenor - 1); // Calculate the payment for the last month
-                        for (let i = 0; i < loan.tenor - 1; i++) {
+                            totalBill - monthlyPayment * (loanData.tenor - 1); // Calculate the payment for the last month
+                        for (let i = 0; i < loanData.tenor - 1; i++) {
                             paymentDateIncrement += 30;
                             // const loanAmount =
                             //     (loan.amount + loan.yieldReturn) / loan.tenor;
@@ -164,12 +166,13 @@ export default async (payload) => {
                         paymentSchedule.push({
                             amount: totalBill,
                             date: paymentDate.setDate(
-                                paymentDate.getDate() + loan.tenor * 30,
+                                paymentDate.getDate() + loanData.tenor * 30,
                             ),
                         });
                     }
+
                     await paymentModel.create({
-                        loanId: loan._id,
+                        loanId: loanData._id,
                         status: 'in borrowing',
                         paymentSchedule,
                     });
@@ -177,11 +180,11 @@ export default async (payload) => {
                     const [borrowerContract, borrowerUser] =
                         await Promise.allSettled([
                             borrowerContractModels.findOne(
-                                { loanId: loan._id },
+                                { loanId: loanData._id },
                                 { contractLink: 1, _id: 0 },
                             ),
                             usersModel.findOne(
-                                { _id: loan.userId },
+                                { _id: loanData.userId },
                                 { name: 1, email: 1, _id: 0 },
                             ),
                         ]);
@@ -195,17 +198,22 @@ export default async (payload) => {
                     // console.log('contractLink', borrowerContract.value);
                     sendLoanFullyFunded(
                         borrower,
-                        loan,
+                        loanData,
                         dashboardLink,
                         borrowerContract.value.contractLink,
                     );
                 } else {
-                    loan.status = 'on process';
+                    loan.value.status = 'on process';
+                    isMatch = true;
                 }
+
                 break;
             }
+            funding.status = isMatch ? 'matched' : 'waiting';
+            funding.save();
 
-            loan.value.status = '';
+            // loan.value.status = 'on request';
+            loan.value.save();
         }
 
         // deleteCache(true, 'availableLoans-*');

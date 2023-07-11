@@ -5,7 +5,10 @@ import loansModels from '../../database/models/loan/loans.models.js';
 import paymentModels from '../../database/models/loan/payment.models.js';
 import transactionModels from '../../database/models/transaction.models.js';
 import { toObjectId } from '../../utils/index.js';
-import { updateBorrowerPerformance } from '../users/transactions.js';
+import {
+    updateAutoLendIfAny,
+    updateBorrowerPerformance,
+} from '../users/transactions.js';
 
 export default async (req, res, next) => {
     try {
@@ -142,6 +145,7 @@ export default async (req, res, next) => {
                                         item.date,
                                         paymentLate,
                                     );
+                                    updateAutoLendIfAny(user.userId);
                                 }
 
                                 return item._id.toString() === repaymentId;

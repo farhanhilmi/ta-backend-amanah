@@ -157,6 +157,7 @@ export default async (payload) => {
             borrowingCategory,
             yieldRange,
             amountToLend,
+            // status: 'matched',
             // formatToJakartaTime(cancelTime),
         });
         if (loans.length === 0) {
@@ -180,9 +181,6 @@ export default async (payload) => {
             amount: amountToLend,
             yield: yieldReturn,
         });
-        autoLend.status = 'matched';
-
-        // await autoLend.save();
 
         let currentTotalFunds = !loans[0]?.totalFunds
             ? 0
@@ -193,6 +191,7 @@ export default async (payload) => {
         const loan = await loansModels.findById(loans[0]._id);
         if (currentTotalFunds === loan.amount) {
             loan.status = 'in borrowing';
+            // autoLend.status = 'in borrowing';
             const paymentSchedule = [];
             const paymentDate = new Date(getCurrentJakartaTime());
             if (loan.paymentSchema === 'Pelunasan Cicilan') {
@@ -237,7 +236,7 @@ export default async (payload) => {
                 paymentSchedule,
                 status: 'in borrowing',
             });
-            autoLend.status = 'in borrowing';
+            // autoLend.status = 'in borrowing';
 
             // GENERATE CONTRACT FOR BORROWER
             const signatureKey = generateSignature({
@@ -295,6 +294,7 @@ export default async (payload) => {
         } else {
             loan.status = 'on process';
         }
+        autoLend.status = 'matched';
 
         // await Promise.allSettled([autoLend.save(), loan.save()]);
 

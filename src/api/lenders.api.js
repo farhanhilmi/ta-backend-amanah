@@ -26,6 +26,18 @@ export class LenderController {
         }
     }
 
+    async getAutoLend(req, res, next) {
+        try {
+            const { userId } = req.user;
+            // const { page, limit, sort, order } = req.query;
+            const data = await this.lenderServices.getAutoLendStatus(userId);
+            // io.emit(`notification#${userId}`, data);
+            res.status(200).json(responseData(data, true, 'Success', {}));
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async postFundingLoan(req, res, next) {
         try {
             const { userId, roles } = req.user;

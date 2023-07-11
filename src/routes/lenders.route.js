@@ -37,7 +37,14 @@ const Routes = () => {
     router.post(
         '/funding/auto',
         authenticateToken,
+        isLender,
         controller.postAutoLend.bind(controller),
+    );
+    router.get(
+        '/funding/auto',
+        authenticateToken,
+        isLender,
+        controller.getAutoLend.bind(controller),
     );
     router.post(
         '/funding',

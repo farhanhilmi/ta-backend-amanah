@@ -617,4 +617,22 @@ export default class LenderService {
             throw error;
         }
     }
+
+    async getAutoLendStatus(userId) {
+        try {
+            const autoLend = await this.autoLendModel.findOne(
+                {
+                    userId,
+                    status: 'waiting',
+                },
+                { cancelTime: 0, __v: 0, modifyDate: 0 },
+            );
+
+            // console.log('autoLend', autoLend);
+
+            return autoLend ? autoLend : [];
+        } catch (error) {
+            throw error;
+        }
+    }
 }

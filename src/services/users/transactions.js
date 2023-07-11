@@ -1,4 +1,5 @@
 import borrowerModels from '../../database/models/borrower/borrower.models.js';
+import autoLendModels from '../../database/models/loan/autoLend.models.js';
 // import { dateFormatter, getCurrentJakartaTime } from '../../utils/index.js';
 
 // const compareDate = () => {
@@ -19,6 +20,24 @@ import borrowerModels from '../../database/models/borrower/borrower.models.js';
 
 //     return statusPayment;
 // };
+
+export const updateAutoLendIfAny = async (userId) => {
+    try {
+        await autoLendModels.findOneAndUpdate(
+            {
+                userId,
+                status: 'matched',
+            },
+            {
+                $set: {
+                    status: 'done',
+                },
+            },
+        );
+    } catch (error) {
+        throw error;
+    }
+};
 
 export const updateBorrowerPerformance = async (
     userId,
