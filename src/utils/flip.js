@@ -96,6 +96,7 @@ export const createPaymentIn = async ({
             sender_phone_number: senderPhoneNumber,
             sender_address: senderAddress,
         };
+        console.log('data masuk', data);
         if (isWebsite === true) {
             data.redirect_url = 'https://amanahsyariah.vercel.app/lender';
         }
@@ -113,6 +114,7 @@ export const createPaymentIn = async ({
             paymentLink: result.data.link_url,
         };
     } catch (error) {
+        console.log('ERRRO FLIP: ', error.response);
         throw error;
     }
 };

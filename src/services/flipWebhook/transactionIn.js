@@ -5,6 +5,7 @@ import loansModels from '../../database/models/loan/loans.models.js';
 import paymentModels from '../../database/models/loan/payment.models.js';
 import transactionModels from '../../database/models/transaction.models.js';
 import { toObjectId } from '../../utils/index.js';
+import { updateBorrowerPerformance } from '../users/transactions.js';
 
 export default async (req, res, next) => {
     try {
@@ -61,14 +62,17 @@ export default async (req, res, next) => {
                             console.log('Repayment');
                             const loanId = user.repaymentId.split('-')[0];
                             const repaymentId = user.repaymentId.split('-')[1];
-                            const payment = await paymentModels.findOne(
-                                { loanId },
-                                { paymentSchedule: 1, _id: 0 },
-                            );
+                            const payment = await paymentModels
+                                .findOne(
+                                    { loanId },
+                                    { paymentSchedule: 1, _id: 0 },
+                                )
+                                .sort({ 'paymentSchedule.date': 1 });
 
+                            console.log('payment', payment);
                             let repaymentStatus = 'disbursement';
                             let paidStatus = '';
-                            let newLoanLimit = 0;
+                            // let newLoanLimit = 0;
                             const borrower = await borrowerModels.findOne({
                                 userId: user.userId,
                             });
@@ -76,23 +80,40 @@ export default async (req, res, next) => {
                                 _id: loanId,
                             });
 
+                            let paymentLate = false;
+
                             const paymentSchedule =
                                 payment.paymentSchedule.filter(
                                     (item, index) => {
-                                        if (
-                                            payment.paymentSchedule.length == 1
-                                        ) {
-                                            newLoanLimit =
-                                                parseInt(borrower.loanLimit) -
-                                                parseInt(loanObject.amount);
-                                            repaymentStatus = 'repayment';
-                                            // if (item.date < new Date()) {
-                                            //     repaymentStatus =
-                                            //         'late repayment';
-                                            // } else {
-                                            //     repaymentStatus = 'repayment';
-                                            // }
+                                        // console.log('index', index);
+                                        // console.log('item', item);
+
+                                        if (item.status == 'late paid') {
+                                            paymentLate = true;
                                         }
+                                        // if (
+                                        //     index ===
+                                        //     payment.paymentSchedule.length - 1
+                                        // ) {
+                                        //     // This is the last index
+                                        //     // repaymentStatus = 'repayment';
+                                        //     updateBorrowerPerformance(
+                                        //         user.userId,
+                                        //         loanObject.amount,
+                                        //         item.date,
+                                        //         paymentLate,
+                                        //     );
+                                        // }
+                                        // console.log(
+                                        //     repaymentId === item._id.toString(),
+                                        // );
+                                        // if (
+                                        //     item._id.toString() === repaymentId
+                                        // ) {
+                                        //     console.log('MASYKKK');
+                                        //     return item;
+                                        // }
+
                                         return (
                                             item._id.toString() === repaymentId
                                         );
@@ -106,6 +127,25 @@ export default async (req, res, next) => {
                                 );
                                 break;
                             }
+
+                            payment.paymentSchedule.find((item, index) => {
+                                if (
+                                    index ===
+                                    payment.paymentSchedule.length - 1
+                                ) {
+                                    // This is the last index
+                                    repaymentStatus = 'repayment';
+
+                                    updateBorrowerPerformance(
+                                        user.userId,
+                                        loanObject.amount,
+                                        item.date,
+                                        paymentLate,
+                                    );
+                                }
+
+                                return item._id.toString() === repaymentId;
+                            });
 
                             if (paymentSchedule[0].date < new Date()) {
                                 // repaymentStatus = 'late repayment';
@@ -166,7 +206,7 @@ export default async (req, res, next) => {
                             });
 
                             user.status = 'done';
-                            borrower.loanLimit = newLoanLimit;
+                            // borrower.loanLimit = newLoanLimit;
                             borrower.save();
                             await user.save();
 

@@ -318,7 +318,7 @@ export default class BorrowerService {
             }
 
             // ? check if user loan limit is not exceeded
-            if (borrower.value.loanLimit < amount) {
+            if (parseInt(borrower.value.loanLimit) < parseInt(amount)) {
                 throw new InsufficientError(
                     'Total pinjaman tidak boleh melebihi limit pinjaman anda.',
                 );
@@ -467,7 +467,7 @@ export default class BorrowerService {
             // balance.amount -= loan.amount;
             // balance.save();
 
-            const transactionId = `${userId}-${generateUUID()}`;
+            const transactionId = `${payload.loanId}-${generateUUID()}`;
             const data = {
                 account_number: filteredBalance[0].accountNumber,
                 bank_code: filteredBalance[0].bankCode,

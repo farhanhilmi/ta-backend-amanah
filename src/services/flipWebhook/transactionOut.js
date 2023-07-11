@@ -2,7 +2,7 @@ import balanceModel from '../../database/models/balance.model.js';
 import loansModels from '../../database/models/loan/loans.models.js';
 import paymentModels from '../../database/models/loan/payment.models.js';
 import transactionModels from '../../database/models/transaction.models.js';
-import { getCurrentJakartaTime } from '../../utils/index.js';
+import { getCurrentJakartaTime, toObjectId } from '../../utils/index.js';
 
 export default async (req, res, next) => {
     try {
@@ -29,25 +29,33 @@ export default async (req, res, next) => {
                 console.log('TransactionOut', parsedData);
 
                 const transactionId = parsedData.idempotency_key;
-                const userId = parsedData.idempotency_key.split('-')[0];
+                const loanId = parsedData.idempotency_key.split('-')[0];
                 const amount = parsedData.amount;
                 const transactionTime = parsedData.time_served;
-
+                let userIdBorrower = '';
                 if (parsedData.remark === 'Disbursement') {
-                    const loan = await loansModels.findOneAndUpdate(
-                        {
-                            userId,
-                        },
+                    const loan = await loansModels.findByIdAndUpdate(
+                        toObjectId(loanId),
                         {
                             status: 'disbursement',
                         },
+                        // {
+                        //     $sort: { createdDate: -1 },
+                        // },
                     );
+                    userIdBorrower = loan._id;
+                    // .sort({ createdDate: -1 });
+
+                    // const loan = loans[0];
+
+                    // loan.status = 'disbursement';
+                    // loan.save();
 
                     const paymentDate = new Date(getCurrentJakartaTime());
                     let paymentDateIncrement = 0;
 
                     const payment = await paymentModels.findOne({
-                        loanId: loan._id,
+                        loanId,
                     });
 
                     const newPaymentDate = payment.paymentSchedule.map(
@@ -56,15 +64,25 @@ export default async (req, res, next) => {
                             // item.date = paymentDate.setDate(
                             //     paymentDate.getDate() + paymentDateIncrement,
                             // );
-
-                            paymentDateIncrement += 30;
                             const updatedItem = { ...item };
-                            updatedItem.date = new Date(
-                                paymentDate.setDate(
-                                    paymentDate.getDate() +
-                                        paymentDateIncrement,
-                                ),
-                            );
+
+                            if (payment.paymentSchedule.length == 1) {
+                                updatedItem.date = new Date(
+                                    paymentDate.setMonth(
+                                        paymentDate.getMonth() + loan.tenor,
+                                    ),
+                                );
+                            } else {
+                                paymentDateIncrement += 30;
+                                // const updatedItem = { ...item };
+                                updatedItem.date = new Date(
+                                    paymentDate.setDate(
+                                        paymentDate.getDate() +
+                                            paymentDateIncrement,
+                                    ),
+                                );
+                            }
+
                             return updatedItem;
                         },
                     );
@@ -86,7 +104,7 @@ export default async (req, res, next) => {
                     ),
                     balanceModel.findOneAndUpdate(
                         {
-                            userId,
+                            userId: userIdBorrower,
                         },
                         {
                             $inc: {

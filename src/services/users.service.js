@@ -55,7 +55,7 @@ export default class Users {
 
     async createUser(payload) {
         try {
-            const { name, email, password, roles, phoneNumber } = payload;
+            let { name, email, password, roles, phoneNumber } = payload;
 
             const errors = validateRequestPayload(payload, [
                 'name',
@@ -69,6 +69,10 @@ export default class Users {
                 throw new ValidationError(`${errors} field(s) are required!`);
             }
 
+            if (typeof password !== 'string') {
+                throw new ValidationError('Password must be string');
+            }
+
             const regex =
                 /^(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/gm;
 
@@ -78,6 +82,19 @@ export default class Users {
                 throw new ValidationError(
                     'Password must be 8 characters long, contain at least one uppercase letter, one lowercase letter, and one special character',
                 );
+            }
+
+            const phoneNumRegex = /^(\+62|62)8[1-9][0-9]{6,9}$/gm;
+            const phoneNumIsValid = phoneNumber.match(phoneNumRegex);
+
+            if (!phoneNumIsValid) {
+                throw new ValidationError(
+                    'Nomor telepon tidak valid. Pastikan menggunakan prefix +62/62 dengan panjang 10-13 digit',
+                );
+            }
+
+            if (phoneNumber.startsWith('+')) {
+                phoneNumber = phoneNumber.replace('+', '');
             }
 
             const [isUserExist, hashedPassword] = await Promise.allSettled([
