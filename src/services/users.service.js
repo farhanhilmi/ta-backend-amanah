@@ -372,7 +372,7 @@ export default class Users {
                 }).save();
             }
 
-            let link = `${config.CLIENT_REACT_APP_HOST}/reset-password/${resetToken}/${user._id}`;
+            let link = `${config.CLIENT_REACT_APP_HOST}/reset-password/${resetToken}/${user._id}/${user.email}`;
 
             if (platform === 'mobile') {
                 const dynamicLink = await generateDynamicLink(
