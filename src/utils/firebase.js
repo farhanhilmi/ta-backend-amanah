@@ -40,14 +40,14 @@ export const uploadFileToFirebase = async (file, filename) => {
 //     return data;
 // };
 
-export const generateDynamicLink = async (token, userId) => {
+export const generateDynamicLink = async (token, userId, email) => {
     try {
         const { data } = await axios.post(config.FIREBASE_DEEP_LINK_URL, {
             dynamicLinkInfo: {
                 domainUriPrefix: config.FIREBASE_DEEP_LINK_DOMAIN_URI_PREFIX,
                 link: `${
                     config.DEEP_LINK_URL
-                }?token=${token}&uid=${userId.toString()}&type=forgetpassword`,
+                }?token=${token}&uid=${userId.toString()}&email=${email}&type=forgetpassword`,
                 androidInfo: {
                     androidPackageName: config.ANDROID_PACKAGE_NAME,
                 },

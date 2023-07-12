@@ -378,6 +378,7 @@ export default class Users {
                 const dynamicLink = await generateDynamicLink(
                     resetToken,
                     user._id,
+                    user.email,
                 );
                 link = dynamicLink.shortLink;
             }
