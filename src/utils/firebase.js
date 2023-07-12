@@ -25,17 +25,36 @@ export const uploadFileToFirebase = async (file, filename) => {
     return fileUrl;
 };
 
+// export const generateDynamicLink = async (token, userId) => {
+//     const { data } = await axios.post(config.FIREBASE_DEEP_LINK_URL, {
+//         dynamicLinkInfo: {
+//             domainUriPrefix: config.FIREBASE_DEEP_LINK_DOMAIN_URI_PREFIX,
+//             link: `${
+//                 config.DEEP_LINK_URL
+//             }?token=${token}&uid=${userId.toString()}`,
+//             androidInfo: {
+//                 androidPackageName: config.ANDROID_PACKAGE_NAME,
+//             },
+//         },
+//     });
+//     return data;
+// };
+
 export const generateDynamicLink = async (token, userId) => {
-    const { data } = await axios.post(config.FIREBASE_DEEP_LINK_URL, {
-        dynamicLinkInfo: {
-            domainUriPrefix: config.FIREBASE_DEEP_LINK_DOMAIN_URI_PREFIX,
-            link: `${
-                config.DEEP_LINK_URL
-            }?token=${token}&uid=${userId.toString()}`,
-            androidInfo: {
-                androidPackageName: config.ANDROID_PACKAGE_NAME,
+    try {
+        const { data } = await axios.post(config.FIREBASE_DEEP_LINK_URL, {
+            dynamicLinkInfo: {
+                domainUriPrefix: config.FIREBASE_DEEP_LINK_DOMAIN_URI_PREFIX,
+                link: `${
+                    config.DEEP_LINK_URL
+                }?token=${token}&uid=${userId.toString()}&type=forgetpassword`,
+                androidInfo: {
+                    androidPackageName: config.ANDROID_PACKAGE_NAME,
+                },
             },
-        },
-    });
-    return data;
+        });
+        return data;
+    } catch (error) {
+        console.log('ERROR GENERATE DYNAMIC LINK', error);
+    }
 };
