@@ -58,6 +58,10 @@ const schema = new Schema(
         paymentSchema: {
             type: String,
         },
+        creditScore: {
+            type: String,
+            default: null,
+        },
         // contractLink: {
         //     type: String,
         //     default: null,

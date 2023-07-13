@@ -532,12 +532,12 @@ export default class LoanRepository {
                             // 'contract.borrower':
                             //     '$borrower_contracts.contractLink',
                             contract: '$borrower_contracts.contractLink',
-                            risk: '500',
+                            // risk: '500',
                             'borrower.name': '$user.name',
                             'borrower.borrowerId': '$borrower._id',
                             'borrower.email': '$user.email',
                             // 'borrower.borrowerId': '$borrower._id',
-                            'borrower.creditScore': '500',
+                            // 'borrower.creditScore': '500',
                             // subtract amount loan with amount funding
                             totalFunding: {
                                 // check if funding is empty array, return 0, else return total funding
