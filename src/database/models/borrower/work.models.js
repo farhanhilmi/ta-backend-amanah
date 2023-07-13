@@ -27,6 +27,10 @@ const schema = new Schema(
             ref: 'users',
             required: true,
         },
+        employmentStatus: {
+            type: String,
+            default: null,
+        },
         companyName: {
             type: String,
             default: null,

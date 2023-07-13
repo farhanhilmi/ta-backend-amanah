@@ -44,6 +44,18 @@ const schema = new Schema(
             default: null,
         },
         status: statusOptions,
+        noDependants: {
+            type: Number,
+            default: null,
+        },
+        totalMonthlyDebt: {
+            type: Number,
+            default: null,
+        },
+        homeOwnershipType: {
+            type: String,
+            default: null,
+        },
         performance: {
             borrowingRecord: {
                 borrowedFund: {
