@@ -89,7 +89,11 @@ export default async (req, res, next) => {
                     payment.status = 'disbursement';
                     payment.paymentSchedule = newPaymentDate;
                     payment.save();
+                } else if (parsedData.remark === 'Withdraw') {
+                    userIdBorrower = loanId;
                 }
+
+                // console.log('userIdBorrower', userIdBorrower);
 
                 await Promise.allSettled([
                     transactionModels.findOneAndUpdate(
