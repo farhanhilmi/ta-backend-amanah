@@ -46,7 +46,7 @@ export default async (loanId) => {
             .findById(loanId)
             .populate('userId', 'name')
             .select(
-                'amount yieldReturn tenor borrowingCategory purpose paymentSchema',
+                'amount yieldReturn tenor borrowingCategory purpose paymentSchema status',
             );
 
         if (!loan) {
@@ -81,6 +81,7 @@ export default async (loanId) => {
             purpose: loan.purpose,
             repaymentSchema: loan.paymentSchema,
             repaymentDate,
+            status: loan.status,
             totalLenders,
             lenders: fundings.map((funding) => ({
                 name: funding.userId.name,
