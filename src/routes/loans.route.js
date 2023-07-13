@@ -21,6 +21,12 @@ const Routes = () => {
 
     router.get('/available/:loanId', controller.getLoanById.bind(controller));
 
+    // LOAN CONTRACT VALIDATION
+    router.get(
+        '/validation/contract/:loanId',
+        controller.getLoanContractValidation.bind(controller),
+    );
+
     return router;
 };
 

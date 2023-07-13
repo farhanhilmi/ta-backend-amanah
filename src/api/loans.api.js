@@ -1,4 +1,5 @@
 import LoanService from '../services/loan.service.js';
+import getLoanValidation from '../services/loans/getLoanValidation.js';
 import { responseData } from '../utils/responses.js';
 
 // import userServices from '../services/index.js';
@@ -65,6 +66,19 @@ export class LoansController {
             );
             // io.emit(`notification#${userId}`, data);
             res.status(200).json(responseData(data, 'OK', 'success', {}));
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getLoanContractValidation(req, res, next) {
+        try {
+            // const { page, limit, sort, order } = req.query;
+            const data = await getLoanValidation(req.params.loanId);
+            // io.emit(`notification#${userId}`, data);
+            res.status(200).json(
+                responseData(data, 'OK', 'fetching success', {}),
+            );
         } catch (error) {
             next(error);
         }

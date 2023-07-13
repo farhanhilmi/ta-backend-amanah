@@ -40,8 +40,10 @@ export default async (payload) => {
             borrowerId: data.borrowerId.toString(),
         });
 
-        const qrData =
-            'https://www.google.com/search?q=ini+isi+halaman+validasi+contract.&oq=ini+isi+halaman+validasi+contract.&aqs=edge..69i57.30981j0j1&sourceid=chrome&ie=UTF-8';
+        // SdTMgpTajpz+JEPAMIFMF4mzlhIrGDRQ1NvpGzO7oXK0wNCSSbJxuCnchrdBc9fEW7ljyJfBkFkQFIkQ33RiC9fKevfZW+p1AeDo3/lqbsC53tA5wmdTb+O7DzXGr7KSEkNItDVcL1gRRKC9bsnFi5nPGXLkkdaECJ6pPPseVYc/L8ut/0/zDsoRjX7mJBQOTAVxzOP861QD2RBkPvSGxI8kONAqBtcfDzamSklTt+1afk1urrhbH1ppaO0jRvAf/Jv3Em39uli1ehwZLZSkosRYdQNct8dhiAjJF8wiMWQz3BIcd7geoWa2KU0Q6OgMyhUIsUW4bi1rVRfh/DyQnQ==
+        const qrData = `${
+            config.CLIENT_REACT_APP_HOST
+        }/contract/validation/${loan.value._id.toString()}}`;
         const qrImage = await generateQrImage(qrData);
         const pdfLink = await generateContractPDF({
             userId: data.userId,
