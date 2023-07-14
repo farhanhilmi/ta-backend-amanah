@@ -1,4 +1,5 @@
 import config from '../../config/index.js';
+import lenderModel from '../../database/models/lender/lender.model.js';
 import autoLendModels from '../../database/models/loan/autoLend.models.js';
 import borrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
 import BorrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
@@ -8,6 +9,7 @@ import loansModels from '../../database/models/loan/loans.models.js';
 import paymentModels from '../../database/models/loan/payment.models.js';
 import usersModel from '../../database/models/users.model.js';
 import { getCurrentJakartaTime, toObjectId } from '../../utils/index.js';
+import lenderSignature from '../../utils/lenderSignature.js';
 import {
     generateContractPDF,
     generateQrImage,
@@ -124,6 +126,23 @@ export default async (payload) => {
                     // );
                 }
 
+                const lender = await lenderModel.findOne({
+                    userId: funding.userId,
+                });
+
+                const yieldReturn =
+                    loanData.yieldReturn *
+                    (funding.amountToLend / loanData.amount);
+
+                const newFunding = await this.fundingModel.create({
+                    userId: funding.userId,
+                    lenderId: lender._id,
+                    loanId: loanData._id,
+                    amount: funding.amountToLend,
+                    yield: yieldReturn,
+                });
+                console.log('newFunding', newFunding);
+
                 if (currentTotalFunds === loanData.amount) {
                     loanData.status = 'in borrowing';
                     isMatch = true;
@@ -210,13 +229,44 @@ export default async (payload) => {
                     isMatch = true;
                 }
 
+                // Update balance for lender and borrower
+                const [unused1, unused2, contractLink] =
+                    await Promise.allSettled([
+                        balanceModel.findOneAndUpdate(
+                            {
+                                userId: lender.userId,
+                            },
+                            {
+                                $inc: {
+                                    amount: -parseInt(funding.amountToLend),
+                                },
+                            },
+                        ),
+                        balanceModel.findOneAndUpdate(
+                            {
+                                userId: loan.userId,
+                            },
+                            {
+                                $inc: {
+                                    amount: parseInt(funding.amountToLend),
+                                },
+                            },
+                        ),
+                        lenderSignature({
+                            loanId: loan._id.toString(),
+                            userId: lender.userId,
+                            lenderId: lender._id.toString(),
+                            borrowerId: loan.borrowerId,
+                        }),
+                    ]);
+
                 break;
             }
             funding.status = isMatch ? 'matched' : 'waiting';
-            funding.save();
+            await funding.save();
 
             // loan.value.status = 'on request';
-            loan.value.save();
+            await loan.value.save();
         }
 
         // deleteCache(true, 'availableLoans-*');

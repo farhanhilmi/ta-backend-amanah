@@ -593,7 +593,7 @@ export default class LenderService {
                 userId,
                 // status done or active
                 status: {
-                    $in: ['waiting', 'matched'],
+                    $in: ['waiting'],
                 },
             });
             if (autoLend > 0) {
