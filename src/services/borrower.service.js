@@ -156,6 +156,15 @@ export default class BorrowerService {
                     {
                         salary: personal.work.salary,
                         position: personal.work.name,
+                        employmentStatus: personal.work.employmentStatus,
+                    },
+                ),
+                await this.borrowerModel.findOneAndUpdate(
+                    { userId: userId },
+                    {
+                        noDependants: personal.noDependants,
+                        totalMonthlyDebt: personal.work.totalMonthlyDebt,
+                        homeOwnershipType: personal.homeOwnershipType,
                     },
                 ),
             ]);
@@ -189,63 +198,6 @@ export default class BorrowerService {
             throw error;
         }
     }
-
-    // async getBorrowerProfile(payload) {
-    //     try {
-    //         const errors = validateRequestPayload(payload, ['userId', 'roles']);
-    //         if (errors.length > 0) {
-    //             throw new ValidationError(`${errors} field(s) are required!`);
-    //         }
-
-    //         const { userId, roles } = payload;
-
-    //         // Check if user is a borrower
-    //         if (!roles.includes('borrower')) {
-    //             throw new AuthorizeError('User is not a borrower!');
-    //         }
-
-    //         const [user, borrower] = await Promise.allSettled([
-    //             await usersModel.findOne({ _id: userId }).select({
-    //                 createdDate: 0,
-    //                 modifyDate: 0,
-    //                 __v: 0,
-    //                 password: 0,
-    //                 salt: 0,
-    //             }),
-    //             await borrowerModel
-    //                 .findOne({ userId })
-    //                 .select({ createdDate: 0, modifyDate: 0, __v: 0 }),
-    //         ]);
-
-    //         if (!user.value) {
-    //             throw new NotFoundError('User not found!');
-    //         }
-
-    //         const work = await this.workModel.findOne({ userId }).select({
-    //             userId: 0,
-    //             __v: 0,
-    //             createdDate: 0,
-    //             modifyDate: 0,
-    //             _id: 0,
-    //         });
-
-    //         // console.log('user', user);
-
-    //         const profile = {
-    //             ...user.value._doc,
-    //             ...borrower.value._doc,
-    //             work: work._doc,
-    //         };
-
-    //         delete profile['_id'];
-
-    //         console.log('Borrower profile fetched!');
-
-    //         return profile;
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
 
     async requestLoan(user, payload) {
         try {
@@ -326,19 +278,6 @@ export default class BorrowerService {
 
             console.log('userId', user.userId);
 
-            // const borrower = await this.borrowerModels.findOne({
-            //     userId: user.userId,
-            // });
-            // console.log('borrower', borrower);
-            // if (
-            //     borrower.status === 'on request' ||
-            //     borrower.status === 'in borrowing' ||
-            //     borrower.status === 'unpaid' ||
-            //     borrower.status === 'on process'
-            // ) {
-            //     throw new ActiveLoanError('You already has an active loan!');
-            // }
-
             const loanApplication = {
                 purpose,
                 amount,
@@ -353,7 +292,6 @@ export default class BorrowerService {
                 borrowerId: borrower.value._id,
             };
             return createLoan({ user: userData, loanApplication });
-            // return { user: userData, loanApplication };
         } catch (error) {
             throw error;
         }
@@ -362,7 +300,6 @@ export default class BorrowerService {
     async getLoanHistory(userId, roles) {
         try {
             const loans = await this.loanRepo.getBorrowerLoanHistory(userId);
-            // console.log('loans', loans);
 
             if (!loans) {
                 return {
@@ -695,25 +632,6 @@ export default class BorrowerService {
                                             },
                                         },
                                     },
-                                    // $and: [
-                                    //     {
-                                    //         $anyElementTrue: {
-                                    //             $map: {
-                                    //                 input: '$paymentSchedule',
-                                    //                 as: 'item',
-                                    //                 in: {
-                                    //                     $eq: [
-                                    //                         '$$item.status',
-                                    //                         'unpaid',
-                                    //                     ],
-                                    //                 },
-                                    //             },
-                                    //         },
-                                    //     },
-                                    //     {
-                                    //         $gte: [new Date(), '$$item.date'],
-                                    //     },
-                                    // ],
                                 },
 
                                 {
@@ -783,7 +701,7 @@ export default class BorrowerService {
             }
             // let currentMonth = 0;
             const currentDate = new Date();
-            const currentMonth = currentDate.getMonth() + 1;
+            // const currentMonth = currentDate.getMonth() + 1;
 
             // for
             const hasPaidInCurrentMonth = loans[0].paymentSchedule.some(
@@ -798,18 +716,6 @@ export default class BorrowerService {
                 },
             );
 
-            // loans[0].paymentSchedule.filter((item) => {
-            //     // console.log('item', item);
-            //     if (
-            //         ['paid', 'late paid'].includes(item.status) &&
-            //         new Date() < new Date(item.date)
-            //     ) {
-            //         console.log('MASUKKK');
-            //         currentMonth = 0;
-            //         return;
-            //     }
-            //     currentMonth = item.amount;
-            // });
             const currentMonthAmount = hasPaidInCurrentMonth
                 ? 0
                 : loans[0].currentMonth;

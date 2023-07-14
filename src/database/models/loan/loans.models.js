@@ -13,6 +13,7 @@ import mongoose from 'mongoose';
 const statusOptions = {
     type: String,
     enum: [
+        'underwriting',
         'on request',
         'on process',
         'in borrowing',
@@ -21,7 +22,7 @@ const statusOptions = {
         'repayment',
         'late repayment',
     ],
-    default: 'on request',
+    default: 'underwriting',
 };
 
 const Schema = mongoose.Schema;
@@ -56,6 +57,10 @@ const schema = new Schema(
         },
         paymentSchema: {
             type: String,
+        },
+        creditScore: {
+            type: String,
+            default: null,
         },
         // contractLink: {
         //     type: String,
