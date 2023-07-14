@@ -1,4 +1,6 @@
 import config from '../../config/index.js';
+import balanceModel from '../../database/models/balance.model.js';
+import lenderModel from '../../database/models/lender/lender.model.js';
 import autoLendModels from '../../database/models/loan/autoLend.models.js';
 import borrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
 import fundingModels from '../../database/models/loan/funding.models.js';
@@ -12,6 +14,7 @@ import {
     toObjectId,
     validateRequestPayload,
 } from '../../utils/index.js';
+import lenderSignature from '../../utils/lenderSignature.js';
 import { sendLoanFullyFunded } from '../mail/sendMail.js';
 // import borrowerContract from '../../database/models/loan/borrowerContract.models.js';
 
@@ -83,6 +86,22 @@ export default async (payload) => {
                     //     "You can't fund more than the available loan amount.",
                     // );
                 }
+
+                const lender = await lenderModel.findOne({
+                    userId: funding.userId,
+                });
+
+                const yieldReturn =
+                    loan.yieldReturn * (funding.amountToLend / loan.amount);
+
+                const newFunding = await fundingModels.create({
+                    userId: funding.userId,
+                    lenderId: lender._id,
+                    loanId: loan._id,
+                    amount: funding.amountToLend,
+                    yield: yieldReturn,
+                });
+                console.log('newFunding', newFunding);
 
                 if (currentTotalFunds === loan.amount) {
                     loan.status = 'in borrowing';
@@ -169,6 +188,37 @@ export default async (payload) => {
                     loan.status = 'on process';
                     isMatch = true;
                 }
+
+                // Update balance for lender and borrower
+                const [unused1, unused2, contractLink] =
+                    await Promise.allSettled([
+                        balanceModel.findOneAndUpdate(
+                            {
+                                userId: lender.userId,
+                            },
+                            {
+                                $inc: {
+                                    amount: -parseInt(funding.amountToLend),
+                                },
+                            },
+                        ),
+                        balanceModel.findOneAndUpdate(
+                            {
+                                userId: loan.userId,
+                            },
+                            {
+                                $inc: {
+                                    amount: parseInt(funding.amountToLend),
+                                },
+                            },
+                        ),
+                        lenderSignature({
+                            loanId: loan._id.toString(),
+                            userId: lender.userId,
+                            lenderId: lender._id.toString(),
+                            borrowerId: loan.borrowerId,
+                        }),
+                    ]);
 
                 break;
             }

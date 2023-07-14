@@ -43,6 +43,10 @@ const schema = new Schema(
             type: String,
             default: null,
         },
+        creditScore: {
+            type: String,
+            default: null,
+        },
         status: statusOptions,
         noDependants: {
             type: Number,

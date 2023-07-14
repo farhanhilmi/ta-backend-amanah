@@ -27,6 +27,8 @@ const Routes = () => {
         controller.getLoanContractValidation.bind(controller),
     );
 
+    router.put('/rating/update', controller.updateLoanRating.bind(controller));
+
     return router;
 };
 

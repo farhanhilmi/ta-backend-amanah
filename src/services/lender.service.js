@@ -589,6 +589,14 @@ export default class LenderService {
                 // cancelTime,
             );
 
+            const balance = await this.balanceModel.findOne({
+                userId,
+            });
+
+            if (balance.amount < amountToLend) {
+                throw new InsufficientError('Your balance is not enough!');
+            }
+
             const autoLend = await this.autoLendModel.countDocuments({
                 userId,
                 // status done or active

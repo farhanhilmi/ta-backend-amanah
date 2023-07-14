@@ -160,9 +160,14 @@ export default async (payload) => {
             // status: 'matched',
             // formatToJakartaTime(cancelTime),
         });
+
+        const lenderBalance = await balanceModel.findOne({ userId });
         if (loans.length === 0) {
             // if auto lend not match with any loans then save to auto_lend table
             autoLend.status = 'waiting';
+            lenderBalance.amount =
+                parseInt(lenderBalance.amount) - parseInt(amountToLend);
+            await lenderBalance.save();
             await autoLend.save();
             // console.log('autoLend', autoLend);
             return autoLend;
@@ -172,34 +177,54 @@ export default async (payload) => {
         const yieldReturn =
             loans[0].yieldReturn * (parseInt(amountToLend) / loans[0].amount);
 
+        let currentTotalFunds = !loans[0]?.totalFunds
+            ? 0
+            : loans[0]?.totalFunds;
+
+        const loan = await loansModels.findById(loans[0]._id);
+
+        currentTotalFunds = currentTotalFunds + parseInt(amountToLend);
+
+        let remainingFunds = 0;
+
+        if (amountToLend > currentTotalFunds) {
+            remainingFunds = amountToLend - loan.amount;
+            currentTotalFunds = amountToLend - remainingFunds;
+        }
+
         const lender = await lenderModel.findOne({ userId });
 
         await fundingModels.create({
             userId,
             lenderId: lender._id,
             loanId: loans[0]._id,
-            amount: amountToLend,
+            amount: amountToLend - remainingFunds,
             yield: yieldReturn,
         });
 
-        let currentTotalFunds = !loans[0]?.totalFunds
-            ? 0
-            : loans[0]?.totalFunds;
-        currentTotalFunds = currentTotalFunds + parseInt(amountToLend);
+        console.log('remainingFunds', remainingFunds);
+        lenderBalance.amount -=
+            parseInt(amountToLend) - parseInt(remainingFunds);
+        await lenderBalance.save();
+
+        // balanceLender.amount -= parseInt(amountToLend - remainingFunds);
+        // await balanceLender.save();
 
         // JIka loan sudah terpenuhi maka ubah status loan menjadi in borrowing
-        const loan = await loansModels.findById(loans[0]._id);
+        console.log('currentTotalFunds', currentTotalFunds);
+        console.log('loan.amount', loan.amount);
         if (currentTotalFunds === loan.amount) {
             loan.status = 'in borrowing';
-            // autoLend.status = 'in borrowing';
+            autoLend.status = 'matched';
             const paymentSchedule = [];
             const paymentDate = new Date(getCurrentJakartaTime());
+            const totalBill =
+                loan.amount +
+                loan.yieldReturn +
+                parseInt(config.TAX_AMOUNT_APP);
             if (loan.paymentSchema === 'Pelunasan Cicilan') {
                 let paymentDateIncrement = 0;
-                const totalBill =
-                    loan.amount +
-                    loan.yieldReturn +
-                    parseInt(config.TAX_AMOUNT_APP);
+
                 const monthlyPayment = Math.floor(totalBill / loan.tenor); // Calculate the integer part of the monthly payment
                 const lastMonthPayment =
                     totalBill - monthlyPayment * (loan.tenor - 1); // Calculate the payment for the last month
@@ -298,19 +323,43 @@ export default async (payload) => {
 
         // await Promise.allSettled([autoLend.save(), loan.save()]);
 
+        if (remainingFunds > 0) {
+            balanceModel.findOneAndUpdate(
+                {
+                    userId,
+                },
+                {
+                    $inc: {
+                        amount: parseInt(amountToLend - currentTotalFunds),
+                    },
+                },
+            );
+        } else {
+            balanceModel.findOneAndUpdate(
+                {
+                    userId,
+                },
+                {
+                    $inc: {
+                        amount: -parseInt(amountToLend),
+                    },
+                },
+            );
+        }
+
         // Update balance for lender and borrower
-        const [unused1, unused2, contractLink, unused3, unused4] =
+        const [unused2, contractLink, unused3, unused4] =
             await Promise.allSettled([
-                balanceModel.findOneAndUpdate(
-                    {
-                        userId,
-                    },
-                    {
-                        $inc: {
-                            amount: -parseInt(amountToLend),
-                        },
-                    },
-                ),
+                // balanceModel.findOneAndUpdate(
+                //     {
+                //         userId,
+                //     },
+                //     {
+                //         $inc: {
+                //             amount: -parseInt(amountToLend),
+                //         },
+                //     },
+                // ),
                 balanceModel.findOneAndUpdate(
                     {
                         userId: loan.userId,
