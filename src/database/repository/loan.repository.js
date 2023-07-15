@@ -532,7 +532,7 @@ export default class LoanRepository {
                             // 'contract.borrower':
                             //     '$borrower_contracts.contractLink',
                             contract: '$borrower_contracts.contractLink',
-                            // risk: '500',
+                            risk: '500',
                             'borrower.name': '$user.name',
                             'borrower.borrowerId': '$borrower._id',
                             'borrower.email': '$user.email',

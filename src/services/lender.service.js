@@ -643,4 +643,22 @@ export default class LenderService {
             throw error;
         }
     }
+
+    async deleteAutoLend(autoLendId) {
+        try {
+            const autoLend = await this.autoLendModel.findOneAndDelete({
+                _id: autoLendId,
+            });
+
+            if (!autoLend) {
+                throw new DataNotFoundError('Auto lend not found!');
+            }
+
+            // console.log('autoLend', autoLend);
+
+            return true;
+        } catch (error) {
+            throw error;
+        }
+    }
 }

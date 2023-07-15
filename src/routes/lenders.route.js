@@ -46,6 +46,12 @@ const Routes = () => {
         isLender,
         controller.getAutoLend.bind(controller),
     );
+    router.delete(
+        '/funding/auto/:autoLendId',
+        authenticateToken,
+        isLender,
+        controller.deleteAutoLend.bind(controller),
+    );
     router.post(
         '/funding',
         authenticateToken,

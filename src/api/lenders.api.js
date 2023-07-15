@@ -38,6 +38,18 @@ export class LenderController {
         }
     }
 
+    async deleteAutoLend(req, res, next) {
+        try {
+            // const { userId } = req.user;
+            // const { page, limit, sort, order } = req.query;
+            await this.lenderServices.deleteAutoLend(req.params.autoLendId);
+            // io.emit(`notification#${userId}`, data);
+            res.status(200).json(responseData([], true, 'Success', {}));
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async postFundingLoan(req, res, next) {
         try {
             const { userId, roles } = req.user;
