@@ -7,7 +7,7 @@ export default class LenderRepository {
     //     super(Lender);
     // }
 
-    async getLenderPortfolio(userId) {
+    async getLenderPortfolio(userId, sortOrder, sort, limit, page) {
         const result = await fundingModels.aggregate([
             {
                 $match: {
@@ -39,7 +39,7 @@ export default class LenderRepository {
                     funds: {
                         amount: '$amount',
                         yieldReturn: '$yield',
-                        repaymentDate: '$createdDate',
+                        createdDate: '$createdDate',
                     },
                     Loan: {
                         borrower: {
@@ -52,6 +52,11 @@ export default class LenderRepository {
                         },
                         status: '$Loan.status',
                     },
+                },
+            },
+            {
+                $sort: {
+                    'funds.createdDate': -1,
                 },
             },
             {
@@ -259,6 +264,18 @@ export default class LenderRepository {
             },
 
             // {
+            //     $sort: {
+            //         'active.funding.funds.repaymentDate': -1,
+            //         'done.funding.funds.repaymentDate': -1,
+            //     },
+            // },
+            // {
+            //     $skip: limit * page - limit,
+            // },
+            // {
+            //     $limit: limit,
+            // },
+            // {
             //     $project: {
             //         active: {
             //             summary: {
@@ -307,6 +324,7 @@ export default class LenderRepository {
             //     },
             // },
         ]);
+
         return result;
     }
 }

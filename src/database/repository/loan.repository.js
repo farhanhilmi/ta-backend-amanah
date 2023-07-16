@@ -86,6 +86,11 @@ export default class LoanRepository {
                     },
                 },
                 {
+                    $sort: {
+                        createdDate: -1,
+                    },
+                },
+                {
                     $group: {
                         _id: null,
                         active: {
@@ -201,6 +206,7 @@ export default class LoanRepository {
                         },
                     },
                 },
+
                 {
                     $project: {
                         active: {

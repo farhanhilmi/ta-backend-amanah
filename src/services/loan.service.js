@@ -221,11 +221,26 @@ class LoanService {
                             // loan: 0,
                         },
                     },
-                    // check all loan data that has borrowingCategory
+                    // FIND MOST BORROWING CATEGORY
+                    {
+                        $group: {
+                            _id: '$borrowingCategory',
+                            count: { $sum: 1 },
+                        },
+                    },
+                    {
+                        $sort: {
+                            count: -1,
+                        },
+                    },
+                    {
+                        $limit: 1,
+                    },
+                    // FIND LOAN WITH MOST BORROWING CATEGORY
                     {
                         $lookup: {
                             from: 'loans',
-                            let: { borrowingCategory: '$borrowingCategory' },
+                            let: { borrowingCategory: '$_id' },
                             pipeline: [
                                 {
                                     $match: {
@@ -258,6 +273,7 @@ class LoanService {
                                         as: 'existingFunding',
                                     },
                                 },
+
                                 {
                                     $match: {
                                         existingFunding: { $eq: [] },
@@ -267,6 +283,53 @@ class LoanService {
                             as: 'loans',
                         },
                     },
+
+                    // check all loan data that has borrowingCategory
+                    // {
+                    //     $lookup: {
+                    //         from: 'loans',
+                    //         let: { borrowingCategory: '$borrowingCategory' },
+                    //         pipeline: [
+                    //             {
+                    //                 $match: {
+                    //                     $expr: {
+                    //                         $and: [
+                    //                             {
+                    //                                 $in: [
+                    //                                     '$status',
+                    //                                     [
+                    //                                         'on request',
+                    //                                         'on process',
+                    //                                     ],
+                    //                                 ],
+                    //                             },
+                    //                             {
+                    //                                 $eq: [
+                    //                                     '$borrowingCategory',
+                    //                                     '$$borrowingCategory',
+                    //                                 ],
+                    //                             },
+                    //                         ],
+                    //                     },
+                    //                 },
+                    //             },
+                    //             {
+                    //                 $lookup: {
+                    //                     from: 'fundings',
+                    //                     localField: '_id',
+                    //                     foreignField: 'loanId',
+                    //                     as: 'existingFunding',
+                    //                 },
+                    //             },
+                    //             {
+                    //                 $match: {
+                    //                     existingFunding: { $eq: [] },
+                    //                 },
+                    //             },
+                    //         ],
+                    //         as: 'loans',
+                    //     },
+                    // },
                     {
                         $project: {
                             loanId: 0,
@@ -352,33 +415,130 @@ class LoanService {
                             funding: 0,
                         },
                     },
-                    // {
-                    //     $lookup: {
-                    //         from: 'users',
-                    //         let: { userId: '$userId' },
-                    //     }
-                    // }
+                    // // {
+                    // //     $lookup: {
+                    // //         from: 'users',
+                    // //         let: { userId: '$userId' },
+                    // //     }
+                    // // }
                 ])
                 .exec();
+            // const fundings = await this.fundingModels.aggregate([
+            //     {
+            //         $match: {
+            //             userId: toObjectId(userId),
+            //         },
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: 'loans',
+            //             localField: 'loanId',
+            //             foreignField: '_id',
+            //             as: 'loan',
+            //         },
+            //     },
+            //     {
+            //         $unwind: '$loan',
+            //     },
+            //     {
+            //         $addFields: {
+            //             borrowingCategory: '$loan.borrowingCategory',
+            //         },
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: 'fundings',
+            //             let: { loanId: '$loan._id' },
+            //             pipeline: [
+            //                 {
+            //                     $match: {
+            //                         $expr: {
+            //                             $and: [
+            //                                 { $eq: ['$loanId', '$$loanId'] },
+            //                                 {
+            //                                     $ne: [
+            //                                         '$userId',
+            //                                         toObjectId(userId),
+            //                                     ],
+            //                                 },
+            //                             ],
+            //                         },
+            //                     },
+            //                 },
+            //             ],
+            //             as: 'otherFundings',
+            //         },
+            //     },
+            //     {
+            //         $unwind: '$otherFundings',
+            //     },
+            //     {
+            //         $group: {
+            //             _id: {
+            //                 loanId: '$loan._id',
+            //                 userId: '$loan.userId',
+            //                 purpose: '$loan.purpose',
+            //                 borrowingCategory: '$borrowingCategory',
+            //                 amount: '$loan.amount',
+            //                 tenor: '$loan.tenor',
+            //                 yieldReturn: '$loan.yieldReturn',
+            //                 status: '$loan.status',
+            //                 borrowerId: '$loan.borrowerId',
+            //                 name: '$loan.borrower.name',
+            //                 email: '$loan.borrower.email',
+            //             },
+            //             totalFunding: { $sum: '$otherFundings.amount' },
+            //         },
+            //     },
+            //     {
+            //         $sort: {
+            //             totalFunding: -1,
+            //         },
+            //     },
+            //     {
+            //         $limit: 1,
+            //     },
+            //     {
+            //         $project: {
+            //             _id: 0,
+            //             loanId: '$_id.loanId',
+            //             userId: '$_id.userId',
+            //             purpose: '$_id.purpose',
+            //             borrowingCategory: '$_id.borrowingCategory',
+            //             amount: '$_id.amount',
+            //             tenor: '$_id.tenor',
+            //             yieldReturn: '$_id.yieldReturn',
+            //             status: '$_id.status',
+            //             totalFunding: 1,
+            //             borrower: {
+            //                 borrowerId: '$_id.borrowerId',
+            //                 name: '$_id.name',
+            //                 email: '$_id.email',
+            //             },
+            //         },
+            //     },
+            // ]);
 
-            const uniqueObjects = [];
+            // console.log(fundings);
 
-            fundings.forEach((object) => {
-                if (uniqueObjects.length < 1) {
-                    uniqueObjects.push(object);
-                }
+            // const uniqueObjects = [];
 
-                uniqueObjects.forEach((item) => {
-                    if (item.loanId.toString() !== object.loanId.toString()) {
-                        uniqueObjects.push(object);
-                    }
-                });
-            });
+            // fundings.forEach((object) => {
+            //     if (uniqueObjects.length < 1) {
+            //         uniqueObjects.push(object);
+            //     }
+
+            //     uniqueObjects.forEach((item) => {
+            //         if (item.loanId.toString() !== object.loanId.toString()) {
+            //             uniqueObjects.push(object);
+            //         }
+            //     });
+            // });
 
             // console.log(uniqueObjects);
 
             // console.log('fundings', JSON.stringify(uniqueObjects, null, 2));
-            return uniqueObjects;
+            return fundings;
         } catch (error) {
             throw error;
         }

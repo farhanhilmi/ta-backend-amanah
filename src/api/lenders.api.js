@@ -99,6 +99,7 @@ export class LenderController {
         try {
             const data = await this.lenderServices.getPortfolio(
                 req.user.userId,
+                req.params,
             );
             res.status(200).json(
                 responseData(data, true, 'Success get lender profit', {}),

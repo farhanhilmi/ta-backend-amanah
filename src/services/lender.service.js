@@ -134,14 +134,26 @@ export default class LenderService {
         }
     }
 
-    async getPortfolio(userId) {
+    async getPortfolio(userId, params) {
         try {
             if (!userId) {
                 throw new ValidationError('user Id is required!');
             }
 
+            let { page, limit, sort, order } = params;
+
+            page = parseInt(page) || 1;
+            limit = parseInt(limit) || 10;
+            sort = sort || 'createdDate';
+            order = order || 'desc';
+            const sortOrder = order === 'asc' ? 1 : -1;
+
             const result = await this.lenderRepository.getLenderPortfolio(
                 userId,
+                sortOrder,
+                sort,
+                limit,
+                page,
             );
             // console.log('result', JSON.stringify(result, null, 2));
             const formattedResult = {
@@ -160,7 +172,26 @@ export default class LenderService {
                     funding: [],
                 },
             };
-            return result[0] ? result[0] : formattedResult;
+
+            if (!result[0]) {
+                return formattedResult;
+            }
+
+            // Sorting the "active" funding by repaymentDate in ascending order
+            // result[0].active.funding.sort(
+            //     (a, b) =>
+            //         new Date(b.funds.repaymentDate) -
+            //         new Date(a.funds.repaymentDate),
+            // );
+
+            // // Sorting the "done" funding by repaymentDate in ascending order
+            // result[0].done.funding.sort(
+            //     (a, b) =>
+            //         new Date(b.funds.repaymentDate) -
+            //         new Date(a.funds.repaymentDate),
+            // );
+
+            return result[0];
         } catch (error) {
             throw error;
         }
@@ -638,7 +669,7 @@ export default class LenderService {
 
             // console.log('autoLend', autoLend);
 
-            return autoLend ? autoLend : [];
+            return autoLend ? autoLend : {};
         } catch (error) {
             throw error;
         }
