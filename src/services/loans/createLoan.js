@@ -1,5 +1,6 @@
 import config from '../../config/index.js';
 import balanceModel from '../../database/models/balance.model.js';
+import workModels from '../../database/models/borrower/work.models.js';
 import lenderModel from '../../database/models/lender/lender.model.js';
 import autoLendModels from '../../database/models/loan/autoLend.models.js';
 import borrowerContractModels from '../../database/models/loan/borrowerContract.models.js';
@@ -17,6 +18,7 @@ import {
     generateSignature,
 } from '../../utils/signature.js';
 import { sendLoanFullyFunded } from '../mail/sendMail.js';
+import checkCreditScore from './checkCreditScore.js';
 // import borrowerContract from '../../database/models/loan/borrowerContract.models.js';
 
 export default async (payload) => {
@@ -31,10 +33,29 @@ export default async (payload) => {
             paymentSchema: payload.loanApplication.paymentSchema,
             borrowingCategory: payload.loanApplication.borrowingCategory,
         };
-        const [loan, borrower] = await Promise.allSettled([
+        const [loan, borrower, work] = await Promise.allSettled([
             await loansModels.create(data),
             await usersModel.findOne({ _id: toObjectId(data.userId) }),
+            await workModels.findOne({ userId: toObjectId(data.userId) }),
         ]);
+
+        const debtToIncome =
+            work.value.salary / borrower.value.totalMonthlyDebt;
+
+        const creditScore = await checkCreditScore({
+            loanId: loan.value._id.toString(),
+            loan_amount: parseFloat(data.amount),
+            homeownership: borrower.value.homeOwnershipType,
+            loan_purpose: data.borrowingCategory,
+            term: data.tenor,
+            annual_income: parseFloat(work.value.annualIncome),
+            debt_to_income: parseFloat(debtToIncome),
+            balance: parseFloat(data.amount),
+            inrest_rate: 0.0,
+        });
+
+        loan.value.creditScore = creditScore;
+        loan.value.save();
 
         console.log('new loan', loan.value);
 

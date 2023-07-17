@@ -103,6 +103,26 @@ export default class BorrowerService {
             // it will throw an error if there is a missing field
             validateVerifyBorrowerRequest(payload, personal, relativesContact);
 
+            if (
+                !['Mortgage', 'Rent', 'Own'].includes(
+                    personal.homeOwnershipType,
+                )
+            ) {
+                throw new ValidationError(
+                    'homeOwnershipType must be one of these values: Mortgage, Rent, Own',
+                );
+            }
+
+            if (
+                !['Mortgage', 'Rent', 'Own'].includes(
+                    personal.homeOwnershipType,
+                )
+            ) {
+                throw new ValidationError(
+                    'homeOwnershipType must be one of these values: Mortgage, Rent, Own',
+                );
+            }
+
             const user = await this.userModel.findOne({
                 _id: toObjectId(userId),
             });
@@ -156,7 +176,7 @@ export default class BorrowerService {
                     {
                         salary: personal.work.salary,
                         position: personal.work.name,
-                        employmentStatus: personal.work.employmentStatus,
+                        annualIncome: personal.work.annualIncome,
                     },
                 ),
                 await this.borrowerModel.findOneAndUpdate(
@@ -238,6 +258,25 @@ export default class BorrowerService {
             ) {
                 throw new RequestError(
                     'Payment schema must be Pelunasan Cicilan or Pelunasan Langsung',
+                );
+            }
+
+            if (
+                ![
+                    'Pindahan',
+                    'Konsolidasi Hutang',
+                    'Lainnya',
+                    'Credit Card',
+                    'Renovasi Rumah',
+                    'Bisnis Kecil',
+                    'Kendaraan',
+                    'Pembelian Besar',
+                    'Tempat Tinggal',
+                    'Kesehatan',
+                ].includes(borrowingCategory)
+            ) {
+                throw new ValidationError(
+                    'borrowingCategory must be one of these values: Pindahan, Konsolidasi Hutang, Lainnya, Credit Card, Renovasi Rumah, Bisnis Kecil, Kendaraan, Pembelian Besar, Tempat Tinggal, Kesehatan',
                 );
             }
 

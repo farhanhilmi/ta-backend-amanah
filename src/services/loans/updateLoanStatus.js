@@ -24,6 +24,7 @@ export default async (payload) => {
         if (errors.length > 0) {
             throw new ValidationError(`${errors} field(s) is required`);
         }
+
         const { loanId, rating } = payload;
 
         const loan = await loansModels.findByIdAndUpdate(loanId, {
@@ -52,7 +53,7 @@ export default async (payload) => {
         });
 
         if (autoLends.length > 0) {
-            const funding = autoLends[0];
+            // const funding = autoLends[0];
             // const loanData = loan.value;
             let isMatch = false;
             // if (loanData.amount)
@@ -72,19 +73,27 @@ export default async (payload) => {
                 },
             ]);
 
-            let currentTotalFunds = !totalFunds[0]?.totalFunds
-                ? 0
-                : totalFunds[0]?.totalFunds;
-
             for (let i = 0; i < autoLends.length; i++) {
-                currentTotalFunds =
-                    currentTotalFunds + autoLends[i].amountToLend;
+                const funding = autoLends[i];
+                let currentTotalFunds = !funding?.totalFunds
+                    ? 0
+                    : funding?.totalFunds;
 
-                if (currentTotalFunds > loan.amount) {
-                    continue;
-                    // throw new RequestError(
-                    //     "You can't fund more than the available loan amount.",
-                    // );
+                // currentTotalFunds =
+                //     currentTotalFunds + autoLends[i].amountToLend;
+
+                // if (currentTotalFunds > loan.amount) {
+                //     continue;
+                //     // throw new RequestError(
+                //     //     "You can't fund more than the available loan amount.",
+                //     // );
+                // }
+                console.log('currentTotalFunds', currentTotalFunds);
+
+                let fundsRemaining = 0;
+
+                if (funding.amountToLend > currentTotalFunds) {
+                    fundsRemaining = funding.amountToLend - loan.amount;
                 }
 
                 const lender = await lenderModel.findOne({
@@ -98,14 +107,16 @@ export default async (payload) => {
                     userId: funding.userId,
                     lenderId: lender._id,
                     loanId: loan._id,
-                    amount: funding.amountToLend,
+                    amount: funding.amountToLend - fundsRemaining,
                     yield: yieldReturn,
                 });
+                isMatch = true;
+
                 console.log('newFunding', newFunding);
+                currentTotalFunds = funding.amountToLend - fundsRemaining;
 
                 if (currentTotalFunds === loan.amount) {
                     loan.status = 'in borrowing';
-                    isMatch = true;
                     const paymentSchedule = [];
                     const paymentDate = new Date(getCurrentJakartaTime());
                     const totalBill =
@@ -186,44 +197,59 @@ export default async (payload) => {
                     );
                 } else {
                     loan.status = 'on process';
-                    isMatch = true;
+                    // isMatch = true;
+                }
+
+                const balanceFund = funding.amountToLend - fundsRemaining;
+
+                if (fundsRemaining > 0) {
+                    await balanceModel.findOneAndUpdate(
+                        {
+                            userId: lender.userId,
+                        },
+                        {
+                            $inc: {
+                                amount: parseInt(
+                                    funding.amountToLend - currentTotalFunds,
+                                ),
+                            },
+                        },
+                    );
                 }
 
                 // Update balance for lender and borrower
-                const [unused1, unused2, contractLink] =
-                    await Promise.allSettled([
-                        balanceModel.findOneAndUpdate(
-                            {
-                                userId: lender.userId,
+                const [unused2, contractLink] = await Promise.allSettled([
+                    // balanceModel.findOneAndUpdate(
+                    //     {
+                    //         userId: lender.userId,
+                    //     },
+                    //     {
+                    //         $inc: {
+                    //             amount: -parseInt(balanceFund),
+                    //         },
+                    //     },
+                    // ),
+                    balanceModel.findOneAndUpdate(
+                        {
+                            userId: loan.userId,
+                        },
+                        {
+                            $inc: {
+                                amount: parseInt(currentTotalFunds),
                             },
-                            {
-                                $inc: {
-                                    amount: -parseInt(funding.amountToLend),
-                                },
-                            },
-                        ),
-                        balanceModel.findOneAndUpdate(
-                            {
-                                userId: loan.userId,
-                            },
-                            {
-                                $inc: {
-                                    amount: parseInt(funding.amountToLend),
-                                },
-                            },
-                        ),
-                        lenderSignature({
-                            loanId: loan._id.toString(),
-                            userId: lender.userId,
-                            lenderId: lender._id.toString(),
-                            borrowerId: loan.borrowerId,
-                        }),
-                    ]);
-
+                        },
+                    ),
+                    lenderSignature({
+                        loanId: loan._id.toString(),
+                        userId: lender.userId,
+                        lenderId: lender._id.toString(),
+                        borrowerId: loan.borrowerId,
+                    }),
+                ]);
+                funding.status = isMatch ? 'matched' : 'waiting';
+                funding.save();
                 break;
             }
-            funding.status = isMatch ? 'matched' : 'waiting';
-            funding.save();
 
             // loan.value.status = 'on request';
             loan.save();

@@ -27,10 +27,10 @@ const schema = new Schema(
             ref: 'users',
             required: true,
         },
-        employmentStatus: {
-            type: String,
-            default: null,
-        },
+        // employmentStatus: {
+        //     type: String,
+        //     default: null,
+        // },
         companyName: {
             type: String,
             default: null,
@@ -52,6 +52,10 @@ const schema = new Schema(
             default: null,
         },
         address: addressData,
+        annualIncome: {
+            type: Number,
+            default: null,
+        },
     },
     {
         timestamps: { createdAt: 'createdDate', updatedAt: 'modifyDate' },

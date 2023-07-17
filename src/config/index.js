@@ -41,6 +41,7 @@ const {
     MIDTRANST_SERVER_KEY,
     FLIP_SECRET_KEY,
     FLIP_BASIC_AUTH,
+    API_CREDIT_SCORE,
 } = process.env;
 
 const config = {
@@ -83,6 +84,7 @@ const config = {
     MIDTRANST_SERVER_KEY,
     FLIP_SECRET_KEY,
     FLIP_BASIC_AUTH,
+    API_CREDIT_SCORE,
 };
 
 export default config;

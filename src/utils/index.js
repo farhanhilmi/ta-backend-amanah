@@ -386,7 +386,7 @@ export const validateVerifyBorrowerRequest = (
         'birthDate',
         'work',
         'idCardNumber',
-        'noDependants',
+        // 'noDependants',
         'homeOwnershipType',
     ]);
 
@@ -399,7 +399,8 @@ export const validateVerifyBorrowerRequest = (
     errors = validateRequestPayload(personal.work, [
         'name',
         'salary',
-        'employmentStatus',
+        // 'employmentStatus',
+        'annualIncome',
         'totalMonthlyDebt',
     ]);
 

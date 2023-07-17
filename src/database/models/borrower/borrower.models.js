@@ -26,6 +26,12 @@ const statusOptions = {
     // default: null,
 };
 
+const homeOwnershipOptions = {
+    type: String,
+    enum: ['Mortgage', 'Rent', 'Own'].concat([null]),
+    // default: null,
+};
+
 const Schema = mongoose.Schema;
 
 const schema = new Schema(
@@ -43,23 +49,21 @@ const schema = new Schema(
             type: String,
             default: null,
         },
-        creditScore: {
-            type: String,
-            default: null,
-        },
+        // creditScore: {
+        //     type: String,
+        //     default: null,
+        // },
         status: statusOptions,
-        noDependants: {
-            type: Number,
-            default: null,
-        },
+        // noDependants: {
+        //     type: Number,
+        //     default: null,
+        // },
         totalMonthlyDebt: {
             type: Number,
             default: null,
         },
-        homeOwnershipType: {
-            type: String,
-            default: null,
-        },
+        homeOwnershipType: homeOwnershipOptions,
+
         performance: {
             borrowingRecord: {
                 borrowedFund: {
