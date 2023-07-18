@@ -45,7 +45,6 @@ const schema = new Schema(
         amount: {
             type: Number,
         },
-
         tenor: {
             type: Number,
         },
@@ -59,6 +58,10 @@ const schema = new Schema(
             type: String,
         },
         creditScore: {
+            type: String,
+            default: null,
+        },
+        productLink: {
             type: String,
             default: null,
         },

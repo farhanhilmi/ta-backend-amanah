@@ -1,5 +1,6 @@
 import config from '../../config/index.js';
 import balanceModel from '../../database/models/balance.model.js';
+import borrowerModels from '../../database/models/borrower/borrower.models.js';
 import workModels from '../../database/models/borrower/work.models.js';
 import lenderModel from '../../database/models/lender/lender.model.js';
 import autoLendModels from '../../database/models/loan/autoLend.models.js';
@@ -29,35 +30,38 @@ export default async (payload) => {
             purpose: payload.loanApplication.purpose,
             amount: payload.loanApplication.amount,
             tenor: payload.loanApplication.tenor,
+            productLink: payload.loanApplication.productLink,
             yieldReturn: payload.loanApplication.yieldReturn,
             paymentSchema: payload.loanApplication.paymentSchema,
             borrowingCategory: payload.loanApplication.borrowingCategory,
         };
-        const [loan, borrower, work] = await Promise.allSettled([
+        const [loan, user, work, borrower] = await Promise.allSettled([
             await loansModels.create(data),
             await usersModel.findOne({ _id: toObjectId(data.userId) }),
             await workModels.findOne({ userId: toObjectId(data.userId) }),
+            await borrowerModels.findOne({ userId: toObjectId(data.userId) }),
         ]);
 
         const debtToIncome =
-            work.value.salary / borrower.value.totalMonthlyDebt;
+            work.value.salary /
+            14994 /
+            (borrower.value.totalMonthlyDebt / 14994);
 
-        const creditScore = await checkCreditScore({
+        checkCreditScore({
             loanId: loan.value._id.toString(),
-            loan_amount: parseFloat(data.amount),
+            loan_amount: data.amount,
             homeownership: borrower.value.homeOwnershipType,
             loan_purpose: data.borrowingCategory,
             term: data.tenor,
-            annual_income: parseFloat(work.value.annualIncome),
-            debt_to_income: parseFloat(debtToIncome),
-            balance: parseFloat(data.amount),
-            inrest_rate: 0.0,
+            annual_income: work.value.annualIncome,
+            debt_to_income: debtToIncome,
+            interest_rate: data.yieldReturn,
         });
 
-        loan.value.creditScore = creditScore;
-        loan.value.save();
+        // loan.value.creditScore = creditScore;
+        // loan.value.save();
 
-        console.log('new loan', loan.value);
+        // console.log('new loan', loan.value);
 
         const signatureKey = generateSignature({
             loanId: loan.value._id.toString(),
@@ -72,10 +76,10 @@ export default async (payload) => {
         const pdfLink = await generateContractPDF({
             userId: data.userId,
             loanId: loan.value._id.toString(),
-            borrowerName: borrower.value.name,
+            borrowerName: user.value.name,
             // borrowerAddress: borrower.address,
-            borrowerEmail: borrower.value.email,
-            borrowerPhone: borrower.value.phoneNumber,
+            borrowerEmail: user.value.email,
+            borrowerPhone: user.value.phoneNumber,
             loanYield: data.yieldReturn,
             loanAmount: data.amount,
             loanTenor: data.tenor,

@@ -54,6 +54,10 @@ const schema = new Schema(
             },
         ],
         status: statusOptions,
+        productPageImage: {
+            type: String,
+            default: null,
+        },
     },
     {
         timestamps: { createdAt: 'createdDate', updatedAt: 'modifyDate' },

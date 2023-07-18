@@ -113,15 +113,15 @@ export default class BorrowerService {
                 );
             }
 
-            if (
-                !['Mortgage', 'Rent', 'Own'].includes(
-                    personal.homeOwnershipType,
-                )
-            ) {
-                throw new ValidationError(
-                    'homeOwnershipType must be one of these values: Mortgage, Rent, Own',
-                );
-            }
+            // if (
+            //     !['Mortgage', 'Rent', 'Own'].includes(
+            //         personal.homeOwnershipType,
+            //     )
+            // ) {
+            //     throw new ValidationError(
+            //         'homeOwnershipType must be one of these values: Mortgage, Rent, Own',
+            //     );
+            // }
 
             const user = await this.userModel.findOne({
                 _id: toObjectId(userId),
@@ -227,6 +227,7 @@ export default class BorrowerService {
                 'tenor',
                 'yieldReturn',
                 'paymentSchema',
+                'productLink',
                 'borrowingCategory',
             ]);
             if (errors.length > 0) {
@@ -239,6 +240,7 @@ export default class BorrowerService {
                 tenor,
                 yieldReturn,
                 paymentSchema,
+                productLink,
                 borrowingCategory,
             } = payload;
 
@@ -263,20 +265,15 @@ export default class BorrowerService {
 
             if (
                 ![
-                    'Pindahan',
-                    'Konsolidasi Hutang',
-                    'Lainnya',
-                    'Credit Card',
-                    'Renovasi Rumah',
                     'Bisnis Kecil',
-                    'Kendaraan',
-                    'Pembelian Besar',
                     'Tempat Tinggal',
                     'Kesehatan',
+                    'Kendaraan',
+                    'Pembelian Besar',
                 ].includes(borrowingCategory)
             ) {
                 throw new ValidationError(
-                    'borrowingCategory must be one of these values: Pindahan, Konsolidasi Hutang, Lainnya, Credit Card, Renovasi Rumah, Bisnis Kecil, Kendaraan, Pembelian Besar, Tempat Tinggal, Kesehatan',
+                    'borrowingCategory must be one of these values: Bisnis Kecil, Tempat Tinggal, Kesehatan, Kendaraan, Pembelian Besar',
                 );
             }
 
@@ -323,6 +320,7 @@ export default class BorrowerService {
                 tenor,
                 yieldReturn,
                 paymentSchema,
+                productLink,
                 borrowingCategory,
             };
 
@@ -446,15 +444,20 @@ export default class BorrowerService {
         }
     }
 
-    async postFundDisbursement(userId, payload) {
+    async postFundDisbursement(userId, payload, files) {
         try {
             const errors = validateRequestPayload(payload, [
                 'loanId',
-                'bankId',
+                'bankCode',
+                'account',
             ]);
             if (errors.length > 0) {
                 throw new ValidationError(`${errors} field(s) are required!`);
             }
+            if (files.length < 1) {
+                throw new ValidationError('productPageImage must be provided!');
+            }
+
             const loan = await this.loanModel.findOne({
                 _id: payload.loanId,
             });
@@ -467,31 +470,23 @@ export default class BorrowerService {
                 );
             }
             console.log('loan', loan);
-            const balance = await this.balanceModel.findOne(
-                {
-                    userId: toObjectId(userId),
-                    // 'account._id': toObjectId(payload.bankId),
-                },
-                // {
-                //     $inc: {
-                //         amount: -loan.amount,
-                //     },
-                // },
-            );
-            const filteredBalance = balance?.account?.filter((item) =>
-                item._id.equals(toObjectId(payload.bankId)),
-            );
+            // const balance = await this.balanceModel.findOne(
+            //     {
+            //         userId: toObjectId(userId),
+            //     },
+            // );
+            // const filteredBalance = balance?.account?.filter((item) =>
+            //     item._id.equals(toObjectId(payload.bankId)),
+            // );
 
-            if (filteredBalance.length < 1) {
-                throw new NotFoundError('Bank account not found!');
-            }
-            // balance.amount -= loan.amount;
-            // balance.save();
+            // if (filteredBalance.length < 1) {
+            //     throw new NotFoundError('Bank account not found!');
+            // }
 
             const transactionId = `${payload.loanId}-${generateUUID()}`;
             const data = {
-                account_number: filteredBalance[0].accountNumber,
-                bank_code: filteredBalance[0].bankCode,
+                account_number: account,
+                bank_code,
                 amount: loan.amount,
                 remark: 'Disbursement',
                 idempotency_key: transactionId,
@@ -506,6 +501,29 @@ export default class BorrowerService {
                 amount: loan.amount,
                 status: 'pending',
             });
+
+            const currentDate = Date.now();
+            const fileUrls = await files.reduce(async (accPromise, file) => {
+                const acc = await accPromise;
+                const category = file.fieldname;
+                console.log('file upload:', file);
+                const path = `product/${category}/${userId}-${currentDate}`;
+                const url = await uploadFileToFirebase(file, path);
+                acc[category] = url;
+                return acc;
+            }, {});
+
+            await this.paymentModel.findOneAndUpdate(
+                {
+                    loanId: payload.loanId,
+                },
+                {
+                    $set: {
+                        productPageImage: fileUrls,
+                    },
+                },
+            );
+            // loan.
 
             // console.log('balance', balance);
             // console.log('filteredBalance', filteredBalance);

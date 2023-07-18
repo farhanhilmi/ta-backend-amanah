@@ -103,6 +103,7 @@ export default class BorrowerController {
             const data = await this.borrowerService.postFundDisbursement(
                 userId,
                 req.body,
+                req.files,
             );
 
             res.status(200).json(responseData(data, true, 'Successfully!'));

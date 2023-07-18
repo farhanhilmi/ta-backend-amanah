@@ -388,6 +388,7 @@ export default class LoanRepository {
                             'borrower.borrowerId': '$borrower._id',
                             loanId: '$_id',
                             status: loanStatus,
+                            risk: '$creditScore',
 
                             // subtract amount loan with amount funding
                             totalFunding: {
@@ -445,6 +446,7 @@ export default class LoanRepository {
                             'borrower.verified': 0,
                             'borrower.roles': 0,
                             'borrower.phoneNumber': 0,
+                            creditScore: 0,
                             'borrower.gender': 0,
                             'borrower.faceImage': 0,
                         },
@@ -538,7 +540,7 @@ export default class LoanRepository {
                             // 'contract.borrower':
                             //     '$borrower_contracts.contractLink',
                             contract: '$borrower_contracts.contractLink',
-                            risk: '500',
+                            risk: '$creditScore',
                             'borrower.name': '$user.name',
                             'borrower.borrowerId': '$borrower._id',
                             'borrower.email': '$user.email',
@@ -588,6 +590,7 @@ export default class LoanRepository {
                             'borrower.loanLimit': 0,
                             'borrower.createdDate': 0,
                             'borrower.modifyDate': 0,
+                            creditScore: 0,
                         },
                     },
                     {
