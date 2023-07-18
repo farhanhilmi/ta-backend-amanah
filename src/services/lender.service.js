@@ -30,6 +30,7 @@ import LenderRepository from '../database/repository/lender.repository.js';
 import balanceModel from '../database/models/balance.model.js';
 import { sendLoanFullyFunded } from './mail/sendMail.js';
 import borrowerContractModels from '../database/models/loan/borrowerContract.models.js';
+import { returnDataPagination } from '../utils/responses.js';
 
 export default class LenderService {
     constructor() {
@@ -140,18 +141,14 @@ export default class LenderService {
                 throw new ValidationError('user Id is required!');
             }
 
-            let { page, limit, sort, order } = params;
+            console.log('params', params);
+            let { page, limit } = params;
 
             page = parseInt(page) || 1;
             limit = parseInt(limit) || 10;
-            sort = sort || 'createdDate';
-            order = order || 'desc';
-            const sortOrder = order === 'asc' ? 1 : -1;
 
             const result = await this.lenderRepository.getLenderPortfolio(
                 userId,
-                sortOrder,
-                sort,
                 limit,
                 page,
             );
@@ -174,7 +171,19 @@ export default class LenderService {
             };
 
             if (!result[0]) {
-                return formattedResult;
+                return {
+                    data: formattedResult,
+                    meta: {
+                        pagination: {
+                            currentPage: 1,
+                            nextPage: null,
+                            previousPage: null,
+                            totalPages: 1,
+                            limit,
+                        },
+                        totalItems: 0,
+                    },
+                };
             }
 
             // Sorting the "active" funding by repaymentDate in ascending order
@@ -191,7 +200,15 @@ export default class LenderService {
             //         new Date(a.funds.repaymentDate),
             // );
 
-            return result[0];
+            return returnDataPagination(
+                result[0],
+                result[0].done.funding.length + result[0].active.funding.length,
+                {
+                    ...params,
+                },
+                'lenders/funding',
+            );
+            // return result[0];
         } catch (error) {
             throw error;
         }

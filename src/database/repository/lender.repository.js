@@ -7,7 +7,7 @@ export default class LenderRepository {
     //     super(Lender);
     // }
 
-    async getLenderPortfolio(userId, sortOrder, sort, limit, page) {
+    async getLenderPortfolio(userId, limit, page) {
         const result = await fundingModels.aggregate([
             {
                 $match: {
@@ -24,6 +24,17 @@ export default class LenderRepository {
             },
             {
                 $unwind: '$Loan',
+            },
+            {
+                $lookup: {
+                    from: 'lender_contracts',
+                    localField: 'loanId',
+                    foreignField: 'loanId',
+                    as: 'lender_contract',
+                },
+            },
+            {
+                $unwind: '$lender_contract',
             },
             {
                 $lookup: {
@@ -49,8 +60,10 @@ export default class LenderRepository {
                             loanId: '$Loan._id',
                             amount: '$Loan.amount',
                             tenor: '$Loan.tenor',
+                            contract: '$lender_contract.contractLink',
                         },
                         status: '$Loan.status',
+                        creditScore: '$Loan.creditScore',
                     },
                 },
             },
@@ -216,7 +229,13 @@ export default class LenderRepository {
                                 then: [],
                                 else: {
                                     $map: {
-                                        input: '$active.funding',
+                                        input: {
+                                            $slice: [
+                                                '$active.funding',
+                                                limit * (page - limit),
+                                                limit,
+                                            ],
+                                        },
                                         as: 'a',
                                         in: {
                                             funds: '$$a.funds',
@@ -224,7 +243,8 @@ export default class LenderRepository {
                                             Loan: {
                                                 borrower: {
                                                     name: '$$a.Loan.borrower.name',
-                                                    creditScore: '500',
+                                                    creditScore:
+                                                        '$$a.Loan.creditScore',
                                                 },
                                                 loan: '$$a.Loan.loan',
                                             },
@@ -242,7 +262,13 @@ export default class LenderRepository {
                                 then: [],
                                 else: {
                                     $map: {
-                                        input: '$done.funding',
+                                        input: {
+                                            $slice: [
+                                                '$done.funding',
+                                                limit * (page - limit),
+                                                limit,
+                                            ],
+                                        },
                                         as: 'a',
                                         in: {
                                             funds: '$$a.funds',
@@ -250,7 +276,8 @@ export default class LenderRepository {
                                             Loan: {
                                                 borrower: {
                                                     name: '$$a.Loan.borrower.name',
-                                                    creditScore: '500',
+                                                    creditScore:
+                                                        '$$a.Loan.creditScore',
                                                 },
                                                 loan: '$$a.Loan.loan',
                                             },
@@ -262,67 +289,6 @@ export default class LenderRepository {
                     },
                 },
             },
-
-            // {
-            //     $sort: {
-            //         'active.funding.funds.repaymentDate': -1,
-            //         'done.funding.funds.repaymentDate': -1,
-            //     },
-            // },
-            // {
-            //     $skip: limit * page - limit,
-            // },
-            // {
-            //     $limit: limit,
-            // },
-            // {
-            //     $project: {
-            //         active: {
-            //             summary: {
-            //                 totalFunding: '$active.summary.totalFunding',
-            //                 totalYield: '$active.summary.totalYield',
-            //             },
-            //             funding: '$active.funding',
-            //         },
-            //         // done: '$done',
-
-            //         done: {
-            //             summary: {
-            //                 totalFunding: '$done.summary.totalFunding',
-            //                 totalYield: '$done.summary.totalYield',
-            //             },
-            //             // done: '$done',
-            //             funding: {
-            //                 $cond: {
-            //                     if: { $eq: ['$done.done', {}] },
-            //                     then: [],
-            //                     else: '$done.funding',
-            //                 },
-            //             },
-            //         },
-            //     },
-            // },
-            // {
-            //     $project: {
-            //         _id: 0,
-            //         active: {
-            //             summary: {
-            //                 totalFunding: { $sum: '$active.funds.amount' },
-            //                 totalYield: {
-            //                     $sum: '$active.funds.yieldReturn',
-            //                 },
-            //             },
-            //             funding: '$active',
-            //         },
-            //         done: {
-            //             summary: {
-            //                 totalFunding: { $sum: '$done.funds.amount' },
-            //                 totalYield: { $sum: '$done.funds.yieldReturn' },
-            //             },
-            //             funding: '$done',
-            //         },
-            //     },
-            // },
         ]);
 
         return result;

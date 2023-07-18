@@ -485,8 +485,8 @@ export default class BorrowerService {
 
             const transactionId = `${payload.loanId}-${generateUUID()}`;
             const data = {
-                account_number: account,
-                bank_code,
+                account_number: payload.account,
+                bank_code: payload.bankCode,
                 amount: loan.amount,
                 remark: 'Disbursement',
                 idempotency_key: transactionId,
@@ -501,16 +501,23 @@ export default class BorrowerService {
                 amount: loan.amount,
                 status: 'pending',
             });
+            // const currentDate = Date.now();
+
+            // const fileUrls = await uploadFileToFirebase(
+            //     files[0].filename,
+            //     `${files[0].productPageImage}/${userId}-${currentDate}`,
+            // );
+            // console.log('fileUrls', fileUrls);
 
             const currentDate = Date.now();
             const fileUrls = await files.reduce(async (accPromise, file) => {
-                const acc = await accPromise;
+                // const acc = await accPromise;
                 const category = file.fieldname;
                 console.log('file upload:', file);
-                const path = `product/${category}/${userId}-${currentDate}`;
+                const path = `${category}/${userId}-${currentDate}`;
                 const url = await uploadFileToFirebase(file, path);
-                acc[category] = url;
-                return acc;
+                // acc[category] = url;
+                return url;
             }, {});
 
             await this.paymentModel.findOneAndUpdate(

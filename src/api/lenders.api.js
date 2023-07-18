@@ -99,10 +99,15 @@ export class LenderController {
         try {
             const data = await this.lenderServices.getPortfolio(
                 req.user.userId,
-                req.params,
+                req.query,
             );
             res.status(200).json(
-                responseData(data, true, 'Success get lender profit', {}),
+                responseData(
+                    data.data,
+                    true,
+                    'Success get lender profit',
+                    data.meta,
+                ),
             );
         } catch (error) {
             next(error);
