@@ -13,6 +13,7 @@ import {
 import { fileURLToPath } from 'url';
 import path, { dirname } from 'path';
 import config from '../config/index.js';
+import numberToWord from './numberToWord.js';
 
 const PUBLIC_KEY_PATH = './keys/public.pem';
 const PRIVATE_KEY_PATH = './keys/private_decrypted.pem';
@@ -145,7 +146,7 @@ ${borrowerEmail}
                 `Total jumlah pinjaman yang akan diterima oleh Pihak Peminjam adalah sebesar ${formatRupiah(
                     loanAmount,
                     'Rp. ',
-                )} [dan kata-kata] (IDR).`,
+                )} [${numberToWord(parseInt(loanAmount))} rupiah] (IDR).`,
                 // `Pinjaman ini memiliki jangka waktu ${loanTenor} dimulai dari tanggal terpenuhinya total jumlah pinjaman.`,
             ],
             { listType: 'numbered', align: 'justify' },
@@ -174,7 +175,7 @@ ${borrowerEmail}
                 `Total imbal hasil yang akan diterima oleh Pihak Pemberi Pinjaman adalah sebesar ${formatRupiah(
                     loanYield,
                     'Rp. ',
-                )} [dan kata-kata] (IDR).`,
+                )} [${numberToWord(parseInt(loanYield))} rupiah] (IDR).`,
             ],
             { listType: 'numbered', align: 'justify' },
         );
