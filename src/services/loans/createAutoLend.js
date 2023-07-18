@@ -183,6 +183,15 @@ export default async (payload) => {
 
         const loan = await loansModels.findById(loans[0]._id);
 
+        if (parseInt(loan.amount) > parseInt(amountToLend)) {
+            autoLend.status = 'waiting';
+            lenderBalance.amount =
+                parseInt(lenderBalance.amount) - parseInt(amountToLend);
+            await lenderBalance.save();
+            await autoLend.save();
+            return true;
+        }
+
         currentTotalFunds = currentTotalFunds + parseInt(amountToLend);
 
         let remainingFunds = 0;

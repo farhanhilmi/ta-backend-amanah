@@ -43,7 +43,7 @@ export default async (payload) => {
         ]);
 
         const debtToIncome =
-            work.value.salary /
+            parseInt(work.value.salary) /
             14994 /
             (borrower.value.totalMonthlyDebt / 14994);
 
@@ -151,6 +151,9 @@ export default async (payload) => {
                 //     //     "You can't fund more than the available loan amount.",
                 //     // );
                 // }
+                if (loanData.amount > autoLends[i].amountToLend) {
+                    continue;
+                }
                 console.log('currentTotalFunds', currentTotalFunds);
 
                 let fundsRemaining = 0;

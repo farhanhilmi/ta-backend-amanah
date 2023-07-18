@@ -349,6 +349,12 @@ export default class LenderService {
                 );
             }
 
+            if (parseInt(payload.amount) !== parseInt(loan.amount)) {
+                throw new ValidationError(
+                    'Pastikan jumlah pendanaan sesuai dengan jumlah pinjaman',
+                );
+            }
+
             // if (payload.amount > loan.amount) {
             //     throw RequestError('You cannot fund more than the loan amount');
             // }

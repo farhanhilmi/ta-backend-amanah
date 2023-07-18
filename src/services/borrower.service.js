@@ -244,9 +244,9 @@ export default class BorrowerService {
                 borrowingCategory,
             } = payload;
 
-            if (yieldReturn < 50000) {
-                throw new RequestError('Minimum loan yield is 50000');
-            }
+            // if (yieldReturn < 50000) {
+            //     throw new RequestError('Minimum loan yield is 50000');
+            // }
 
             // * - Check if user is a borrower
             if (!user.roles.includes('borrower')) {
