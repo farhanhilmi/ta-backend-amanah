@@ -454,6 +454,7 @@ export default class BorrowerService {
             if (errors.length > 0) {
                 throw new ValidationError(`${errors} field(s) are required!`);
             }
+            console.log('files', files);
             if (files.length < 1) {
                 throw new ValidationError('productPageImage must be provided!');
             }

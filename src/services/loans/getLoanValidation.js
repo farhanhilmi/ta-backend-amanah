@@ -59,9 +59,11 @@ export default async (loanId) => {
             .select('paymentSchedule.date')
             .lean();
 
-        const repaymentDate = payments.paymentSchedule.map((schedule) =>
-            schedule.date.toISOString(),
-        );
+        const repaymentDate = !payments
+            ? []
+            : payments.paymentSchedule.map((schedule) =>
+                  schedule.date.toISOString(),
+              );
 
         // Retrieve funding details for the loan
         const fundings = await fundingModels
