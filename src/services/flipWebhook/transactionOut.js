@@ -93,7 +93,7 @@ export default async (req, res, next) => {
                     userIdBorrower = loanId;
                 }
 
-                // console.log('userIdBorrower', userIdBorrower);
+                console.log('amount', amount);
 
                 await Promise.allSettled([
                     transactionModels.findOneAndUpdate(

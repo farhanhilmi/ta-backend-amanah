@@ -708,6 +708,17 @@ export default class LenderService {
                 throw new DataNotFoundError('Auto lend not found!');
             }
 
+            this.balanceModel.findOneAndUpdate(
+                {
+                    userId: autoLend.userId,
+                },
+                {
+                    $inc: {
+                        amount: autoLend.amountToLend,
+                    },
+                },
+            );
+
             // console.log('autoLend', autoLend);
 
             return true;

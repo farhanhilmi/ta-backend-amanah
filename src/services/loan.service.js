@@ -10,6 +10,7 @@ import {
 import { NotFoundError, ValidationError } from '../utils/errorHandler.js';
 import fundingModels from '../database/models/loan/funding.models.js';
 import { toObjectId } from '../utils/index.js';
+import { isCached } from '../utils/redis.js';
 
 class LoanService {
     constructor() {
@@ -41,7 +42,7 @@ class LoanService {
             q = q?.trim();
 
             let queryFilter = [];
-            let cacheKey = `availableLoans-${page}-${limit}-${sort}-${order}`;
+            let cacheKey = `availableLoans-${userId}-${page}-${limit}-${sort}-${order}`;
 
             if (tenor_min && tenor_max) {
                 queryFilter.push({
@@ -83,6 +84,11 @@ class LoanService {
                 queryFilter.push({ purpose: { $regex: q, $options: 'i' } });
                 cacheKey += `-[query:${q.replace(/\s/g, '')}]`;
             }
+
+            // const cachedItems = await isCached(cacheKey);
+            // if (cachedItems) {
+            //     return cachedItems;
+            // }
 
             // const loansFunding = await this.fundingModels.find({userId, status: })
             // console.log('loansFunding',loansFunding)
@@ -148,6 +154,7 @@ class LoanService {
             ]);
             const loanCount =
                 totalItems.length < 1 ? 0 : totalItems[0].loanCount;
+
             return returnDataPagination(
                 loans,
                 loanCount,
@@ -284,52 +291,6 @@ class LoanService {
                         },
                     },
 
-                    // check all loan data that has borrowingCategory
-                    // {
-                    //     $lookup: {
-                    //         from: 'loans',
-                    //         let: { borrowingCategory: '$borrowingCategory' },
-                    //         pipeline: [
-                    //             {
-                    //                 $match: {
-                    //                     $expr: {
-                    //                         $and: [
-                    //                             {
-                    //                                 $in: [
-                    //                                     '$status',
-                    //                                     [
-                    //                                         'on request',
-                    //                                         'on process',
-                    //                                     ],
-                    //                                 ],
-                    //                             },
-                    //                             {
-                    //                                 $eq: [
-                    //                                     '$borrowingCategory',
-                    //                                     '$$borrowingCategory',
-                    //                                 ],
-                    //                             },
-                    //                         ],
-                    //                     },
-                    //                 },
-                    //             },
-                    //             {
-                    //                 $lookup: {
-                    //                     from: 'fundings',
-                    //                     localField: '_id',
-                    //                     foreignField: 'loanId',
-                    //                     as: 'existingFunding',
-                    //                 },
-                    //             },
-                    //             {
-                    //                 $match: {
-                    //                     existingFunding: { $eq: [] },
-                    //                 },
-                    //             },
-                    //         ],
-                    //         as: 'loans',
-                    //     },
-                    // },
                     {
                         $project: {
                             loanId: 0,
@@ -423,121 +384,7 @@ class LoanService {
                     // // }
                 ])
                 .exec();
-            // const fundings = await this.fundingModels.aggregate([
-            //     {
-            //         $match: {
-            //             userId: toObjectId(userId),
-            //         },
-            //     },
-            //     {
-            //         $lookup: {
-            //             from: 'loans',
-            //             localField: 'loanId',
-            //             foreignField: '_id',
-            //             as: 'loan',
-            //         },
-            //     },
-            //     {
-            //         $unwind: '$loan',
-            //     },
-            //     {
-            //         $addFields: {
-            //             borrowingCategory: '$loan.borrowingCategory',
-            //         },
-            //     },
-            //     {
-            //         $lookup: {
-            //             from: 'fundings',
-            //             let: { loanId: '$loan._id' },
-            //             pipeline: [
-            //                 {
-            //                     $match: {
-            //                         $expr: {
-            //                             $and: [
-            //                                 { $eq: ['$loanId', '$$loanId'] },
-            //                                 {
-            //                                     $ne: [
-            //                                         '$userId',
-            //                                         toObjectId(userId),
-            //                                     ],
-            //                                 },
-            //                             ],
-            //                         },
-            //                     },
-            //                 },
-            //             ],
-            //             as: 'otherFundings',
-            //         },
-            //     },
-            //     {
-            //         $unwind: '$otherFundings',
-            //     },
-            //     {
-            //         $group: {
-            //             _id: {
-            //                 loanId: '$loan._id',
-            //                 userId: '$loan.userId',
-            //                 purpose: '$loan.purpose',
-            //                 borrowingCategory: '$borrowingCategory',
-            //                 amount: '$loan.amount',
-            //                 tenor: '$loan.tenor',
-            //                 yieldReturn: '$loan.yieldReturn',
-            //                 status: '$loan.status',
-            //                 borrowerId: '$loan.borrowerId',
-            //                 name: '$loan.borrower.name',
-            //                 email: '$loan.borrower.email',
-            //             },
-            //             totalFunding: { $sum: '$otherFundings.amount' },
-            //         },
-            //     },
-            //     {
-            //         $sort: {
-            //             totalFunding: -1,
-            //         },
-            //     },
-            //     {
-            //         $limit: 1,
-            //     },
-            //     {
-            //         $project: {
-            //             _id: 0,
-            //             loanId: '$_id.loanId',
-            //             userId: '$_id.userId',
-            //             purpose: '$_id.purpose',
-            //             borrowingCategory: '$_id.borrowingCategory',
-            //             amount: '$_id.amount',
-            //             tenor: '$_id.tenor',
-            //             yieldReturn: '$_id.yieldReturn',
-            //             status: '$_id.status',
-            //             totalFunding: 1,
-            //             borrower: {
-            //                 borrowerId: '$_id.borrowerId',
-            //                 name: '$_id.name',
-            //                 email: '$_id.email',
-            //             },
-            //         },
-            //     },
-            // ]);
 
-            // console.log(fundings);
-
-            // const uniqueObjects = [];
-
-            // fundings.forEach((object) => {
-            //     if (uniqueObjects.length < 1) {
-            //         uniqueObjects.push(object);
-            //     }
-
-            //     uniqueObjects.forEach((item) => {
-            //         if (item.loanId.toString() !== object.loanId.toString()) {
-            //             uniqueObjects.push(object);
-            //         }
-            //     });
-            // });
-
-            // console.log(uniqueObjects);
-
-            // console.log('fundings', JSON.stringify(uniqueObjects, null, 2));
             return fundings;
         } catch (error) {
             throw error;

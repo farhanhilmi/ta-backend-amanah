@@ -42,6 +42,7 @@ const {
     FLIP_SECRET_KEY,
     FLIP_BASIC_AUTH,
     API_CREDIT_SCORE,
+    REDIS_URL,
 } = process.env;
 
 const config = {
@@ -85,6 +86,7 @@ const config = {
     FLIP_SECRET_KEY,
     FLIP_BASIC_AUTH,
     API_CREDIT_SCORE,
+    REDIS_URL,
 };
 
 export default config;
