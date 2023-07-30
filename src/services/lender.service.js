@@ -708,18 +708,24 @@ export default class LenderService {
                 throw new NotFoundError('Auto lend not found!');
             }
 
-            console.log('autoLend', autoLend);
+            // console.log('autoLend', autoLend);
 
-            this.balanceModel.findOneAndUpdate(
-                {
-                    userId: autoLend.userId,
-                },
-                {
-                    $inc: {
-                        amount: autoLend.amountToLend,
-                    },
-                },
-            );
+            const balance = await this.balanceModel.findOne({
+                userId: autoLend.userId,
+            });
+            balance.amount += autoLend.amountToLend;
+
+            // this.balanceModel.findOneAndUpdate(
+            //     {
+            //         userId: autoLend.userId,
+            //     },
+            //     {
+            //         $inc: {
+            //             amount: autoLend.amountToLend,
+            //         },
+            //     },
+            // );
+            balance.save();
             autoLend.deleteOne();
             // console.log('autoLend', autoLend);
 

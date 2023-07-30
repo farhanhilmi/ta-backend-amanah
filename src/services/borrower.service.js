@@ -345,15 +345,44 @@ export default class BorrowerService {
                 };
             }
 
+            // console.log('loans', loans);
+
+            // const loanHistory = loans.history.reduce((acc, loan) => {
+            //     const loanId = loan.loanId.toString();
+            //     if (!acc[loanId]) {
+            //         acc[loanId] = loan;
+            //     }
+            //     return acc;
+            // });
+
+            const loanHistory = Object.values(
+                loans.history.reduce((acc, loan) => {
+                    const loanId = loan.loanId.toString();
+                    if (!acc[loanId]) {
+                        acc[loanId] = loan;
+                    }
+                    return acc;
+                }, {}),
+            );
+
             if (loans.active.length < 1) {
+                // remove duplicate loan history
+
                 return {
                     active: {},
-                    history: loans.history,
+                    history: loanHistory,
                 };
             }
 
-            // console.log('loans', JSON.stringify(loans, null, 4));
-            return loans;
+            // console.log(
+            //     'loans',
+            //     JSON.stringify(
+            //         { active: loans.active, history: loanHistory },
+            //         null,
+            //         2,
+            //     ),
+            // );
+            return { active: loans.active, history: loanHistory };
         } catch (error) {
             throw error;
         }

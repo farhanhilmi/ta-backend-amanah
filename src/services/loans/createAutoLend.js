@@ -316,12 +316,7 @@ export default async (payload) => {
                 email: borrowerUser.value.email,
             };
             // console.log('contractLink', borrowerContract.value);
-            sendLoanFullyFunded(
-                borrower,
-                loan,
-                dashboardLink,
-                borrowerContract,
-            );
+            sendLoanFullyFunded(borrower, loan, dashboardLink, pdfLink);
 
             // if (fundingRemaining > 0) {
             //     balanceModel.findOneAndUpdate(
