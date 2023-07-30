@@ -152,7 +152,7 @@ export default class LenderService {
                 limit,
                 page,
             );
-            // console.log('result', JSON.stringify(result, null, 2));
+            console.log('portfolio ', JSON.stringify(result, null, 2));
             const formattedResult = {
                 active: {
                     summary: {
@@ -700,13 +700,15 @@ export default class LenderService {
 
     async deleteAutoLend(autoLendId) {
         try {
-            const autoLend = await this.autoLendModel.findOneAndDelete({
+            const autoLend = await this.autoLendModel.findOne({
                 _id: autoLendId,
             });
 
             if (!autoLend) {
-                throw new DataNotFoundError('Auto lend not found!');
+                throw new NotFoundError('Auto lend not found!');
             }
+
+            console.log('autoLend', autoLend);
 
             this.balanceModel.findOneAndUpdate(
                 {
@@ -718,7 +720,7 @@ export default class LenderService {
                     },
                 },
             );
-
+            autoLend.deleteOne();
             // console.log('autoLend', autoLend);
 
             return true;

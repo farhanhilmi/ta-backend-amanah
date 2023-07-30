@@ -3,27 +3,45 @@ import config from '../config/index.js';
 
 let client;
 
-function redisClient() {
-    if (client && client.connected) {
-        // If the client is already connected, return the existing client
-        return client;
-    } else {
-        // Create a new Redis client
-        client = redis.createClient(config.REDIS_URL);
+export const redisClient = () => {
+    try {
+        if (client && client.connected) {
+            // If the client is already connected, return the existing client
+            return client;
+        } else {
+            // Create a new Redis client
+            client = redis.createClient({
+                password: '0nBprflT8j8YyqQkSK9XYCXZbVzfTWS1',
+                host: 'redis-18436.c252.ap-southeast-1-1.ec2.cloud.redislabs.com',
+                port: 18436,
+                retry_strategy: (options) => {
+                    if (
+                        options.error &&
+                        options.error.code === 'ECONNREFUSED'
+                    ) {
+                        console.log('redis refused to connect');
+                    } else {
+                        return Math.min(options.attempt * 100, 3000);
+                    }
+                },
+            });
 
-        // Event listener for Redis connection errors
-        client.on('error', function (error) {
-            console.error('Redis connection error:', error.message);
-        });
+            // Event listener for Redis connection errors
+            client.on('error', function (error) {
+                console.error('Redis connection error:', error);
+            });
 
-        // Event listener for Redis reconnection
-        client.on('ready', function () {
-            console.log('Redis reconnected');
-        });
+            // Event listener for Redis reconnection
+            client.on('ready', function () {
+                console.log('Redis reconnected');
+            });
 
-        return client;
+            return client;
+        }
+    } catch (error) {
+        console.log('ERROR REDIS', error);
     }
-}
+};
 
 export const isCached = async (cacheKey) => {
     // const { error, client } = redisClient();
